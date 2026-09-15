@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Surgical Investigation Report — [PROJECT NAME]</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'dark',
+        themeVariables: {
+            primaryColor: '#58a6ff',
+            primaryTextColor: '#e6edf3',
+            primaryBorderColor: '#30363d',
+            lineColor: '#8b949e',
+            secondaryColor: '#161b22',
+            tertiaryColor: '#0d1117',
+            background: '#0d1117',
+            cardBackground: '#161b22',
+            mainBkg: '#0d1117',
+            nodeBorder: '#30363d',
+            clusterBkg: '#161b22',
+            titleColor: '#e6edf3',
+            edgeLabelBackground: '#161b22'
+        }
+    });
+    </script>
+    <style>
+        :root {
+            --bg: #0d1117;
+            --fg: #e6edf3;
+            --accent: #58a6ff;
+            --accent-warm: #f0883e;
+            --border: #30363d;
+            --card: #161b22;
+            --muted: #8b949e;
+            --good: #3fb950;
+            --warn: #d29922;
+            --bad: #f85149;
+            --wolf: #cBCC4F;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--fg);
+            line-height: 1.7;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem 4rem;
+        }
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 3rem 0 2rem;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 2rem;
+        }
+        .header h1 {
+            font-size: 2.2rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, var(--accent), var(--wolf));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .header .meta {
+            color: var(--muted);
+            font-size: 0.9rem;
+        }
+        .header .meta span { margin: 0 0.75rem; }
+        .header .wolf-mark {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+        /* Navigation */
+        .nav {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(13, 17, 23, 0.95);
+            backdrop-filter: blur(8px);
+            border-bottom: 1px solid var(--border);
+            padding: 0.75rem 1.5rem;
+            margin-bottom: 2rem;
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .nav a {
+            color: var(--accent);
+            text-decoration: none;
+            font-size: 0.85rem;
+            padding: 0.4rem 0.75rem;
+            border-radius: 6px;
+            transition: background 0.15s;
+        }
+        .nav a:hover { background: rgba(88, 166, 255, 0.1); }
+        .nav .nav-label {
+            color: var(--muted);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-right: 0.5rem;
+        }
+        /* Cards */
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .card h2 {
+            font-size: 1.25rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .card h3 {
+            font-size: 1.05rem;
+            margin: 1.25rem 0 0.5rem;
+            color: var(--accent);
+        }
+        /* Findings */
+        .finding {
+            padding: 0.85rem 1rem;
+            margin: 0.6rem 0;
+            border-radius: 6px;
+            border-left: 3px solid var(--border);
+            background: rgba(255,255,255,0.02);
+        }
+        .finding.good  { border-left-color: var(--good);  background: rgba(63,185,80,0.06); }
+        .finding.warn  { border-left-color: var(--warn);  background: rgba(210,153,34,0.06); }
+        .finding.bad   { border-left-color: var(--bad);   background: rgba(248,81,73,0.06); }
+        .finding .tag {
+            display: inline-block;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            padding: 0.15rem 0.5rem;
+            border-radius: 4px;
+            margin-bottom: 0.4rem;
+        }
+        .finding.good .tag { background: rgba(63,185,80,0.2);  color: var(--good); }
+        .finding.warn .tag { background: rgba(210,153,34,0.2);  color: var(--warn); }
+        .finding.bad  .tag { background: rgba(248,81,73,0.2);   color: var(--bad);  }
+        .finding p { margin: 0.3rem 0 0; font-size: 0.95rem; }
+        .finding .source {
+            font-size: 0.8rem;
+            color: var(--muted);
+            margin-top: 0.3rem;
+        }
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 0.9rem;
+        }
+        th {
+            text-align: left;
+            padding: 0.6rem 0.75rem;
+            background: var(--card);
+            color: var(--muted);
+            font-weight: 600;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-bottom: 1px solid var(--border);
+        }
+        td {
+            padding: 0.6rem 0.75rem;
+            border-bottom: 1px solid var(--border);
+            vertical-align: top;
+        }
+        tr:last-child td { border-bottom: none; }
+        .status-badge {
+            display: inline-block;
+            padding: 0.15rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .status-ok   { background: rgba(63,185,80,0.15); color: var(--good); }
+        .status-warn { background: rgba(210,153,34,0.15); color: var(--warn); }
+        .status-bad  { background: rgba(248,81,73,0.15);  color: var(--bad);  }
+        .status-unknown { background: rgba(139,148,158,0.15); color: var(--muted); }
+        /* Mermaid */
+        .diagram-wrap {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 1.25rem;
+            margin: 1.25rem 0;
+            overflow-x: auto;
+        }
+        .diagram-wrap .diagram-title {
+            font-size: 0.85rem;
+            color: var(--muted);
+            margin-bottom: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        /* Recommendations */
+        .rec {
+            background: var(--card);
+            border: 1px solid var(--accent);
+            border-radius: 8px;
+            padding: 1rem 1.25rem;
+            margin: 0.75rem 0;
+            transition: border-color 0.15s;
+        }
+        .rec:hover { border-color: var(--wolf); }
+        .rec .rec-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.4rem;
+        }
+        .rec .rec-priority {
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+        }
+        .priority-high   { background: rgba(248,81,73,0.2);  color: var(--bad); }
+        .priority-medium { background: rgba(210,153,34,0.2);  color: var(--warn); }
+        .priority-low    { background: rgba(63,185,80,0.2);   color: var(--good); }
+        .rec .rec-title { font-weight: 600; font-size: 1rem; margin-bottom: 0.3rem; }
+        .rec .rec-detail { font-size: 0.9rem; color: var(--muted); }
+        /* Buttons */
+        .btn-row {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid var(--border);
+        }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all 0.15s;
+            text-decoration: none;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent), #1f6feb);
+            color: #fff;
+        }
+        .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(88,166,255,0.3); }
+        .btn-secondary {
+            background: transparent;
+            border: 1px solid var(--accent);
+            color: var(--accent);
+        }
+        .btn-secondary:hover { background: rgba(88,166,255,0.1); }
+        .btn-wolf {
+            background: linear-gradient(135deg, var(--wolf), #a0a000);
+            color: #0d1117;
+        }
+        .btn-wolf:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(204,204,79,0.3); }
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.75);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 1rem;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            max-width: 550px;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+        .modal h2 {
+            font-size: 1.3rem;
+            margin-bottom: 0.5rem;
+            color: var(--accent);
+        }
+        .modal p { color: var(--muted); font-size: 0.9rem; margin-bottom: 1rem; }
+        .modal textarea {
+            width: 100%;
+            min-height: 100px;
+            padding: 0.75rem;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--fg);
+            font-family: inherit;
+            font-size: 0.9rem;
+            resize: vertical;
+        }
+        .modal textarea:focus { outline: none; border-color: var(--accent); }
+        .modal .btn-row { border-top: none; padding-top: 0; margin-top: 1rem; }
+        .modal-close {
+            float: right;
+            background: none;
+            border: none;
+            color: var(--muted);
+            font-size: 1.5rem;
+            cursor: pointer;
+            line-height: 1;
+        }
+        .modal-close:hover { color: var(--fg); }
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 2rem 0 0;
+            margin-top: 2rem;
+            border-top: 1px solid var(--border);
+            color: var(--muted);
+            font-size: 0.8rem;
+        }
+        /* Responsive */
+        @media (max-width: 640px) {
+            .container { padding: 1rem; }
+            .header h1 { font-size: 1.6rem; }
+            .nav { overflow-x: auto; flex-wrap: nowrap; padding: 0.5rem 1rem; }
+            .nav a { font-size: 0.75rem; padding: 0.3rem 0.5rem; }
+            .btn { padding: 0.6rem 1rem; font-size: 0.85rem; }
+        }
+        /* Print */
+        @media print {
+            .nav, .btn-row, .modal-overlay { display: none !important; }
+            body { background: #fff; color: #000; }
+            .card { border: 1px solid #ccc; background: #fff; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <!-- HEADER -->
+    <div class="header">
+        <span class="wolf-mark">🐺</span>
+        <h1>Surgical Investigation Report</h1>
+        <div class="meta">
+            <span>Project: <strong>[PROJECT NAME]</strong></span>
+            <span>│</span>
+            <span>Generated: [DATE]</span>
+            <span>│</span>
+            <span>Mode: <strong>Investigator</strong></span>
+            <span>│</span>
+            <span>By: Fenrie</span>
+        </div>
+    </div>
+
+    <!-- STICKY NAV -->
+    <nav class="nav">
+        <span class="nav-label">Jump to:</span>
+        <a href="#mission">Mission</a>
+        <a href="#dependencies">Dependencies</a>
+        <a href="#best-practices">Practices</a>
+        <a href="#optimality">Optimality</a>
+        <a href="#diagrams">Diagrams</a>
+        <a href="#findings">Findings</a>
+        <a href="#recommendations">Recommendations</a>
+        <a href="#interactive">Interactive</a>
+    </nav>
+
+    <!-- 1. MISSION -->
+    <section id="mission">
+        <div class="card">
+            <h2>🎯 Project Mission</h2>
+            [MISSION CONTENT — stated purpose, success criteria, stated vs actual gap analysis]
+        </div>
+    </section>
+
+    <!-- 2. DEPENDENCIES -->
+    <section id="dependencies">
+        <div class="card">
+            <h2>📦 Dependencies</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Dependency</th>
+                        <th>Version</th>
+                        <th>Latest</th>
+                        <th>Status</th>
+                        <th>Notes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    [DEPENDENCY ROWS — one per dependency, with status badges]
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- 3. BEST PRACTICES -->
+    <section id="best-practices">
+        <div class="card">
+            <h2>⚙️ Engineering Best Practices</h2>
+
+            <h3>Code Quality</h3>
+            [GOOD/WARN/BAD findings with source citations]
+
+            <h3>Architecture</h3>
+            [GOOD/WARN/BAD findings with source citations]
+
+            <h3>Testing</h3>
+            [GOOD/WARN/BAD findings with source citations]
+
+            <h3>Security</h3>
+            [GOOD/WARN/BAD findings with source citations]
+
+            <h3>Performance</h3>
+            [GOOD/WARN/BAD findings with source citations]
+
+            <h3>Documentation</h3>
+            [GOOD/WARN/BAD findings with source citations]
+        </div>
+    </section>
+
+    <!-- 4. OPTIMALITY -->
+    <section id="optimality">
+        <div class="card">
+            <h2>📊 Implementation Optimality</h2>
+            [Algorithm choice analysis, complexity review, resource usage, alternative approaches considered, scalability assessment]
+        </div>
+    </section>
+
+    <!-- 5. DIAGRAMS -->
+    <section id="diagrams">
+        <div class="card">
+            <h2>📐 Architecture Diagrams</h2>
+
+            <div class="diagram-wrap">
+                <div class="diagram-title">Backend Architecture</div>
+                <div class="mermaid">
+                [BACKEND MMD CONTENT]
+                </div>
+            </div>
+
+            <div class="diagram-wrap">
+                <div class="diagram-title">Frontend Architecture</div>
+                <div class="mermaid">
+                [FRONTEND MMD CONTENT]
+                </div>
+            </div>
+
+            <div class="diagram-wrap">
+                <div class="diagram-title">Research Findings</div>
+                <div class="mermaid">
+                [RESEARCH MMD CONTENT]
+                </div>
+            </div>
+
+            <div class="diagram-wrap">
+                <div class="diagram-title">Entire Project — Full System View</div>
+                <div class="mermaid">
+                [ENTIRE PROJECT MMD CONTENT]
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 6. FINDINGS SUMMARY -->
+    <section id="findings">
+        <div class="card">
+            <h2>📋 Findings Summary</h2>
+            [Consolidated list of all findings — good, warn, bad — with sources]
+        </div>
+    </section>
+
+    <!-- 7. RECOMMENDATIONS -->
+    <section id="recommendations">
+        <div class="card">
+            <h2>💡 Recommendations</h2>
+            <p>These are actionable recommendations for the project, prioritized. Each includes what to do, why, and estimated effort.</p>
+
+            [RECOMMENDATION ITEMS — one .rec block per recommendation]
+
+            <div class="rec">
+                <div class="rec-header">
+                    <span class="rec-priority priority-high">High</span>
+                </div>
+                <div class="rec-title">[Recommendation title — specific and actionable]</div>
+                <div class="rec-detail">
+                    <strong>Why:</strong> [Reason this matters]<br>
+                    <strong>What:</strong> [What exactly to build/change]<br>
+                    <strong>Effort:</strong> [Estimated effort]<br>
+                    <strong>Source:</strong> [Where this came from — file, URL, subreddit]
+                </div>
+            </div>
+
+            <!-- Repeat .rec blocks for each recommendation -->
+        </div>
+    </section>
+
+    <!-- 8. INTERACTIVE FEATURES -->
+    <section id="interactive">
+        <div class="card">
+            <h2>🔧 Interactive Features</h2>
+
+            <h3>Report Features</h3>
+            <ul>
+                <li><strong>Quick navigate</strong> — use the sticky top bar to jump to any section</li>
+                <li><strong>Mermaid diagrams</strong> — rendered inline, scroll to zoom, drag to pan</li>
+                <li><strong>Find in page</strong> — Ctrl+F / Cmd+F works across the full report</li>
+                <li><strong>Print-friendly</strong> — print styles strip navigation and buttons</li>
+            </ul>
+
+            <h3>Request a Follow-up Investigation</h3>
+            <p>Found something you want dug into further? Click below and tell me what to investigate.</p>
+            <button class="btn btn-secondary" onclick="openModal()">🔍 Request Follow-up</button>
+
+            <h3 style="margin-top:1.5rem;">Implement Findings &amp; Recommendations</h3>
+            <p>Ready to act on what was found? Click below to have Fenrie implement the findings and recommendations directly — following best practices from this investigation.</p>
+            <button class="btn btn-wolf" onclick="implementFindings()">🚀 IMPLEMENT FINDINGS/RECOMMENDATIONS</button>
+
+            <div class="btn-row" style="border-top:none; padding-top:0; margin-top:1.5rem;">
+                <p style="color:var(--muted); font-size:0.85rem; width:100%;">
+                    The IMPLEMENT button sends a message to Fenrie to begin building. You'll get a new conversation thread where the investigation findings are applied directly.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer>
+        <p>Surgical-Investigation Skill · Generated by Fenrie · [DATE]</p>
+        <p style="margin-top:0.3rem;">Stand back. I've got this. 🐺</p>
+    </footer>
+
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal">
+    <div class="modal">
+        <button class="modal-close" onclick="closeModal()">&times;</button>
+        <h2>🔍 Request Follow-up Investigation</h2>
+        <p>What would you like Fenrie to investigate further? Be specific — reference a finding number, a file, or describe what you want explored.</p>
+        <textarea id="followup-input" placeholder="e.g. 'Expand on finding #3 — I want to know more about the auth flow issues'"></textarea>
+        <div class="btn-row">
+            <button class="btn btn-primary" onclick="submitFollowup()">Submit Request</button>
+            <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<script>
+function openModal() {
+    document.getElementById('modal').classList.add('active');
+    document.getElementById('followup-input').focus();
+}
+function closeModal() {
+    document.getElementById('modal').classList.remove('active');
+}
+function submitFollowup() {
+    var query = document.getElementById('followup-input').value.trim();
+    if (!query) return;
+    closeModal();
+    if (window.hermes && window.hermes.send) {
+        window.hermes.send('Follow-up investigation request: ' + query);
+    } else {
+        alert('Copy this and send it as a new message:\n\n' + query);
+    }
+}
+function implementFindings() {
+    if (window.hermes && window.hermes.send) {
+        window.hermes.send('IMPLEMENT FINDINGS/RECOMMENDATIONS from the Surgical Investigation Report');
+    } else {
+        alert('Copy this and send it as a new message:\n\nIMPLEMENT FINDINGS/RECOMMENDATIONS from the Surgical Investigation Report');
+    }
+}
+document.getElementById('modal').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+});
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeModal();
+});
+</script>
+
+</body>
+</html>
