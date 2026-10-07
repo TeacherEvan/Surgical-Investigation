@@ -524,8 +524,21 @@ Synthesize results in the main agent. Don't dispatch more subagents than you hav
 **Reference Files:**
 - `references/search-strategy-system.md` — Strategy definitions, inference rules, budgets, credibility tiers, cache config, skill mapping, output schemas (consolidated decision tables for Step 0.5, 0.7, 7)
 - `references/feature-recommendation-format.md` — Required elements for feature-level recommendations in Step 8a
-- `references/telegram-bot-auth.md` — Authorization layers and debugging rules for Telegram bot investigations
+- `references/external-service-auth.md` — Authorization layers and debugging rules for external service investigations (replaces telegram-bot-auth.md; generalizes bot auth to any service)
+- `references/mermaid-best-practices.md` — Size limits, naming, subgraph usage, color coding, common patterns for Step 8a diagrams
+- `references/sarif-schema.md` — SARIF 2.1.0 required fields, mapping to investigation output, compatibility, common mistakes (Step 7.5 JSON format)
+- `references/skill-authoring-standards.md` — Hermes skill file requirements, frontmatter rules, body structure, size limits, reference/template file rules, test requirements
 
 ---
 
 *Fenrie's note: Investigation without action is just voyeurism. Whether reporting or building, the point is to make things better. 🐺*
+
+---
+
+## Meta-Investigation Note
+
+**A skill can investigate itself.** Run this procedure on `Surgical-Investigation` (or any skill) using `codebase-first` + `pattern-driven` strategy. This is not vanity — it validates the skill's own claims (does the procedure work? do references match reality? is the version accurate?) and produces concrete improvements (updated docs, fixed references, new tests, version bumps). Treat it as a full-sweep audit with the skill's own codebase as the target.
+
+Pitfall: Don't treat meta-investigation as a formality. If the skill claims it supports multi-format output but only HTML exists in references/, fix it — don't document the gap and move on. A meta-investigation that doesn't change anything is a failed audit.
+
+**Library shape (always-on):** This skill follows the class-level pattern: one `SKILL.md` for always-on procedure rules, a small `references/` directory for topical depth (not one file per session, not umbrella hoarding). References are named by topic (`search-strategy-system.md`, `mermaid-best-practices.md`, `sarif-schema.md`) and extend an existing file when the topic overlaps. If a reference file grows beyond ~200 lines of distinct rules, split it by sub-topic rather than appending everything.
