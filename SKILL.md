@@ -521,6 +521,11 @@ Synthesize results in the main agent. Don't dispatch more subagents than you hav
 
 **Composition Principle:** Surgical-Investigation is the *orchestrator*. It sequences calls to specialized skills rather than duplicating their logic. Each step maps to a skill call with clear input/output contracts.
 
+**Reference Files:**
+- `references/search-strategy-system.md` — Strategy definitions, inference rules, budgets, credibility tiers, cache config, skill mapping, output schemas (consolidated decision tables for Step 0.5, 0.7, 7)
+- `references/feature-recommendation-format.md` — Required elements for feature-level recommendations in Step 8a
+- `references/telegram-bot-auth.md` — Authorization layers and debugging rules for Telegram bot investigations
+
 ---
 
 *Fenrie's note: Investigation without action is just voyeurism. Whether reporting or building, the point is to make things better. 🐺*
