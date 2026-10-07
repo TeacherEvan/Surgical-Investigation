@@ -1,0 +1,93 @@
+name: Skill Validation
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          pip install pytest pyyaml
+
+      - name: Validate SKILL.md frontmatter
+        run: |
+          python -c "
+          import yaml
+          with open('SKILL.md', 'r') as f:
+              content = f.read()
+          lines = content.split('---')
+          if len(lines) < 2:
+              raise ValueError('No YAML frontmatter found')
+          frontmatter = yaml.safe_load(lines[1])
+          assert 'name' in frontmatter, 'Missing name'
+          assert 'description' in frontmatter, 'Missing description'
+          assert 'version' in frontmatter, 'Missing version'
+          assert frontmatter['description'].startswith('Use when'), 'Description must start with \"Use when\"'
+          assert 'version' in frontmatter and frontmatter['version'], 'Version required'
+          print('Frontmatter valid:', frontmatter['name'], 'v' + str(frontmatter['version']))
+          "
+
+      - name: Check SKILL.md body
+        run: |
+          python -c "
+          with open('SKILL.md', 'r') as f:
+              content = f.read()
+          lines = content.split('---')
+          body = '---'.join(lines[2:]) if len(lines) > 2 else ''
+          assert '## When to Use' in body, 'Missing When to Use section'
+          assert '## Skill Structure' in body, 'Missing Skill Structure section'
+          assert '## Author' in body, 'Missing Author section'
+          print('Body structure valid')
+          "
+
+      - name: Check template
+        run: |
+          test -f templates/report.html || (echo 'Missing templates/report.html'; exit 1)
+          echo 'Report template found'
+
+      - name: Check references
+        run: |
+          for f in references/*.md; do
+            echo "Reference: $f"
+          done
+          test -f references/search-strategy-system.md || (echo 'Missing search-strategy-system.md'; exit 1)
+          echo 'References valid'
+
+      - name: Check tests
+        run: |
+          test -d tests || (echo 'Missing tests/ directory'; exit 1)
+          test -f tests/skills/test_surgical_investigation_skill.py || (echo 'Missing test file'; exit 1)
+          echo 'Tests present'
+
+      - name: Run tests
+        run: |
+          python -m pytest tests/skills/test_surgical_investigation_skill.py -v --tb=short
+
+      - name: Check file sizes
+        run: |
+          python -c "
+          import os
+          for root, dirs, files in os.walk('.'):
+              dirs[:] = [d for d in dirs if d not in ['.git', '.github', '__pycache__', '.cache']]
+              for f in files:
+                  if f.endswith('.py') or f.endswith('.md'):
+                      path = os.path.join(root, f)
+                      size = os.path.getsize(path)
+                      if size > 100 * 1024:
+                          print(f'WARNING: {path} is {size/1024:.1f}KB (limit ~100KB)')
+                      else:
+                          print(f'OK: {path} ({size/1024:.1f}KB)')
+          "

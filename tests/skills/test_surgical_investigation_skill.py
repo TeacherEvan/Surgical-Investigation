@@ -335,6 +335,119 @@ class TestIntegration(unittest.TestCase):
                                 f"Both modes share investigation: only {steps_mentioned}/7 steps found")
 
 
+class TestNewFeatures(unittest.TestCase):
+    """Tests for v1.1.0 features: strategy system, budgets, cache, refinement, formats, composition."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.content = SKILL_PATH.read_text(encoding="utf-8")
+        import yaml
+        m = re.search(r"\n---\s*\n", cls.content[3:])
+        cls.body = cls.content[m.start() + 3:]
+
+    def test_version_is_1_1_0_or_later(self):
+        import yaml
+        content = SKILL_PATH.read_text(encoding="utf-8")
+        m = re.search(r"\n---\s*\n", content[3:])
+        self.assertIsNotNone(m, "Frontmatter delimiter missing")
+        fm = yaml.safe_load(content[3:m.start() + 3])
+        ver = fm.get("version", "")
+        # Should be at least 1.1.0 (or higher minor)
+        match = re.match(r"^(\d+)\.(\d+)\.\d+$", ver)
+        self.assertIsNotNone(match, f"version not semver: {ver}")
+        major, minor = int(match.group(1)), int(match.group(2))
+        self.assertGreaterEqual(minor, 1, f"Expected version >= 1.1.0, got {ver}")
+
+    def test_search_strategy_selection_step(self):
+        # Step 0.5: Search Strategy Selection must exist
+        self.assertIn("Step 0.5", self.body, "Missing Step 0.5 (Search Strategy Selection)")
+        self.assertIn("Search Strategy", self.body, "Missing Search Strategy section")
+
+    def test_eight_strategies_documented(self):
+        # All 8 strategies should be mentioned
+        strategies = [
+            "codebase-first", "targeted-docs", "error-driven",
+            "rule-id-driven", "cve-driven", "pattern-driven",
+            "community-pulse", "full-sweep"
+        ]
+        for strategy in strategies:
+            self.assertIn(strategy, self.body,
+                          f"Strategy '{strategy}' not documented")
+
+    def test_strategy_budget_documented(self):
+        # Budget references should exist
+        has_budget = ("budget" in self.body.lower() or
+                      "Budget" in self.body or
+                      "subagent" in self.body.lower())
+        self.assertTrue(has_budget, "Search budget/reference missing")
+
+    def test_search_budgets_table(self):
+        # Budget table with subagents/sources/time should exist
+        body_lower = self.body.lower()
+        has_subagent_budget = "subagent" in body_lower or "budget" in body_lower
+        self.assertTrue(has_subagent_budget,
+                        "Search budget table/reference missing")
+
+    def test_incremental_cache_reference(self):
+        # Step 0.7: Cache system
+        self.assertIn("Step 0.7", self.body, "Missing Step 0.7 (Incremental Cache)")
+        self.assertIn("cache", self.body.lower(), "Cache system not mentioned")
+
+    def test_quick_search_mode(self):
+        # Quick Search Mode (lightweight path)
+        self.assertIn("Quick Search", self.body,
+                      "Quick Search Mode not documented")
+
+    def test_interactive_refinement(self):
+        # Interactive refinement options
+        refinement_mentioned = ("Interactive Refinement" in self.body or
+                                "refinement" in self.body.lower())
+        self.assertTrue(refinement_mentioned,
+                        "Interactive Refinement section not documented")
+
+    def test_output_formats_step_7_5(self):
+        # Step 7.5: Multiple output formats
+        step_75_found = ("Step 7.5" in self.body or "Output Formats" in self.body)
+        self.assertTrue(step_75_found,
+                      "Step 7.5 / Output Formats section missing")
+        # Check for multiple format names
+        formats = ["JSON", "Markdown", "SARIF"]
+        found_formats = [f for f in formats if f in self.body]
+        self.assertGreaterEqual(len(found_formats), 2,
+                                f"Expected at least 2 of {formats} in body, found: {found_formats}")
+
+    def test_sarif_mentioned(self):
+        # SARIF format specifically
+        self.assertIn("SARIF", self.body, "SARIF output format not mentioned")
+
+    def test_skill_composition_reference(self):
+        # Composition principle: surgical-investigation as orchestrator
+        has_composition = ("orchestrator" in self.body.lower() or
+                           "orchestrat" in self.body.lower() or
+                           "composition" in self.body.lower() or
+                           "delegate" in self.body.lower())
+        self.assertTrue(has_composition,
+                        "Skill composition / orchestrator principle not mentioned")
+
+    def test_agent_surgery_family_skills(self):
+        # AgentSurgery family skills referenced
+        family_skills = [
+            "surgical-orchestration", "surgical-implementation",
+            "surgical-hermesdothealth"
+        ]
+        found = [s for s in family_skills if s in self.body]
+        self.assertGreaterEqual(len(found), 1,
+                                f"AgentSurgery family skills not referenced (expected at least 1 of {family_skills})")
+
+    def test_source_credibility_tiers(self):
+        # Source credibility scoring system
+        has_credibility = ("credibility" in self.body.lower() or
+                           "tier" in self.body.lower() or
+                           "weight" in self.body.lower())
+        self.assertTrue(has_credibility,
+                        "Source credibility / tier scoring not mentioned")
+
+
 if __name__ == "__main__":
     # Allow running directly: python test_surgical_investigation_skill.py
     unittest.main(verbosity=2)

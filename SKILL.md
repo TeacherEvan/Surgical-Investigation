@@ -1,14 +1,14 @@
 ---
 name: surgical-investigation
-description: "Use when investigating a project: diagrams, findings, build."
-version: 1.0.0
+description: "Use when investigating: strategy search, multi-output."
+version: 1.1.0
 author: Fenrie (Lea's AI wolf), Hermes Agent
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
   hermes:
-    tags: [investigation, project-analysis, report-generation, mermaid, html-report]
-    related_skills: [superpowers:executing-plans, superpowers:verification-before-completion, superpowers:systematic-debugging]
+    tags: [investigation, project-analysis, report-generation, mermaid, html-report, search-strategy, multi-format-output, skill-composition]
+    related_skills: [superpowers:executing-plans, superpowers:verification-before-completion, superpowers:systematic-debugging, surgical-orchestration, surgical-implementation, surgical-hermesdothealth, code-review-and-quality, systematic-debugging, parallel-cli, competitor-news-monitor, grounded-citations]
 ---
 
 # Surgical-Investigation Skill
