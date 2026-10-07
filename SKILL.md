@@ -52,13 +52,14 @@ The skill activates by prompting the user for mode selection as the first action
 | Step | Action |
 |------|--------|
 | 0 | Prompt user: Investigator or Project-Manager? |
-| 1 | Define scope — present template, ask for confirmation |
+| 0.5 | Search Strategy Selection — pick strategy (codebase-first, targeted-docs, error-driven, rule-id-driven, cve-driven, pattern-driven, community-pulse, full-sweep, or combo) |
+| 1 | Define scope — present template with Strategy field, ask for confirmation |
 | 2 | Verify mission — stated vs actual |
 | 3 | Audit dependencies — manifests, versions, services, native deps |
 | 4 | Assess best practices — code quality, architecture, testing, security, performance, docs |
 | 5 | Check optimality — algorithms, complexity, resources, alternatives, scalability |
 | 6 | Audit agent files — skills, memory, config, docs, kanban, tools |
-| 7 | External research — Reddit, communities, official docs (subagents) |
+| 7 | External research — strategy-driven sources (subagents) |
 | 8a | Investigator: generate HTML report + 4 Mermaid diagrams |
 | 8b | Project-Manager: YOLO-build directly from findings |
 | 9 | Verify completion, close out |
@@ -87,6 +88,75 @@ Accept: "Investigator", "Project-Manager", "1", "2", "investigator", "project-ma
 
 ---
 
+### Step 0.5: Search Strategy Selection
+
+**Before defining scope, determine how external research should work. The strategy shapes which sources are searched and how queries are constructed.**
+
+```
+🐺 Search Strategy:
+
+Choose one (or combine with +):
+  1. codebase-first      — Search local files only; external only if code points outward
+  2. targeted-docs       — Official docs, GitHub issues for specific library/feature
+  3. error-driven        — Exact error messages, stack traces, known issues
+  4. rule-id-driven      — Specific linter/type-checker rule IDs and configs
+  5. cve-driven          — Dependency vulnerability databases (OSV, GH Advisory)
+  6. pattern-driven      — Architecture patterns, prior art, RFCs
+  7. community-pulse     — Reddit, HN, dev.to, Discord — current consensus
+  8. full-sweep          — All of the above (comprehensive audit default)
+
+Combine examples: "codebase-first + error-driven" or "targeted-docs + cve-driven"
+Default: full-sweep (for broad audits)
+```
+
+Accept: numbers, names, or combinations like "1+3" or "codebase-first,error-driven".
+Re-prompt if unclear.
+
+**Strategy Inference:** If the user's request clearly maps to a strategy, infer and confirm rather than presenting the full menu:
+- "ESLint/ruff/TS errors" → rule-id-driven
+- "CVE" / "vulnerable dependencies" → cve-driven  
+- "slow build" / "performance" → error-driven + pattern-driven
+- "how to implement X with Y" → targeted-docs
+- "architecture for X" → pattern-driven
+- "current best practice for X" → community-pulse
+- "find X in this codebase" → codebase-first
+- "audit everything" / "full review" → full-sweep
+
+**Search Budget (per strategy):** Prevent runaway subagent calls.
+| Strategy | Max Subagents | Max Sources | Time Budget |
+|----------|---------------|-------------|-------------|
+| codebase-first | 2 | N/A (local) | 60s |
+| targeted-docs | 3 | 5 | 90s |
+| error-driven | 3 | 5 | 90s |
+| rule-id-driven | 2 | 4 | 60s |
+| cve-driven | 2 | 3 | 60s |
+| pattern-driven | 3 | 6 | 120s |
+| community-pulse | 3 | 5 | 90s |
+| full-sweep | 6 | 15 | 300s |
+
+Stop when budget exhausted — synthesize what you have.
+
+**Source Credibility Scoring:** Weight findings by source tier.
+- Tier 1 (weight 1.0): Official docs, vendor advisories, RFCs, language specs
+- Tier 2 (weight 0.8): GitHub issues (official repo), Stack Overflow accepted answers, conference talks
+- Tier 3 (weight 0.6): Technical blogs (known authors), GitHub discussions, vendor blogs
+- Tier 4 (weight 0.4): Reddit, HN, dev.to, Discord, personal blogs
+- Tier 5 (weight 0.2): Unverified sources, marketing pages
+
+Surface tier in findings: "Finding: X [Tier 1: ESLint docs]"
+
+---
+
+### Step 0.7: Incremental Investigation Cache
+
+**Cache external research per project to avoid re-searching.**
+- Cache location: `docs/external-research/.cache/<strategy>/<query-hash>.json`
+- Cache TTL: 7 days for Tier 1/2, 3 days for Tier 3, 1 day for Tier 4/5
+- On new investigation: check cache first, only refresh stale entries
+- Cache key: strategy + normalized query + project fingerprint (package.json hash, etc.)
+
+---
+
 ### Step 1: Scope Definition
 
 Present this scope template and ask for confirmation. **Do NOT proceed until scope is confirmed.**
@@ -96,16 +166,17 @@ Present this scope template and ask for confirmation. **Do NOT proceed until sco
 
 Target:      [path or "current workspace"]
 Mission:     [what the project is supposed to do]
-Output:      [HTML report / direct build — determined by mode]
-Sources:     Internal (project files, configs, docs) + External
-             (Reddit, tech communities, official docs)
-Criteria:    [what makes a source worth examining]
+Output:      [HTML report / direct build / search findings — determined by mode]
+Strategy:    [codebase-first / targeted-docs / error-driven / rule-id-driven / cve-driven / pattern-driven / community-pulse / full-sweep / combo]
+Sources:     [Auto-populated from strategy — override if needed]
+Criteria:    [what makes a source worth examining — e.g., "last 12 months", "official sources only", "min 10 upvotes"]
 ```
 
 **Stop and ask if:**
 - No target specified and workspace is ambiguous
 - Scope is "everything" with no boundaries — help narrow it
 - User's intent doesn't clearly match either mode
+- Strategy doesn't fit the mission (e.g., full-sweep for a targeted question)
 
 ---
 
@@ -215,26 +286,85 @@ Check all agent-operated resources:
 
 ---
 
-### Step 7: External Source Investigation
+### Step 7: External Source Investigation (Strategy-Driven)
 
-Search these sources in parallel using subagents:
+**Execute searches per the selected strategy from Step 0.5.**
 
-**Reddit** — relevant subreddits for the project's domain. Look for:
-- Common pitfalls and gotchas
-- Alternative approaches the community recommends
-- Deprecations or breaking changes discussed
+| Strategy | Sources | Query Construction |
+|----------|---------|-------------------|
+| `codebase-first` | Local only (grep, AST, config, logs) | Derived from findings in Steps 3-6 |
+| `targeted-docs` | Official docs, GitHub repo/issues, migration guides | `library + feature + version` |
+| `error-driven` | Stack Overflow, GitHub Issues, library issue tracker | Exact error text + framework + version |
+| `rule-id-driven` | Rule documentation, plugin source, config examples | `tool + plugin + rule-id` |
+| `cve-driven` | OSV.dev, GitHub Advisory, NVD, vendor security pages | `package@version` (from Step 3) |
+| `pattern-driven` | Technical blogs, conference talks, RFCs, prior art | `pattern + domain + constraints` |
+| `community-pulse` | Reddit, HN, dev.to, Twitter/X, Discord | `"topic" + "2024/2025" + "recommended"` |
+| `full-sweep` | All above (parallel subagents) | Broad per domain |
 
-**Technical communities** — Stack Overflow, GitHub issues, dev.to, Hacker News, domain-specific forums. Look for:
-- Best practice debates
-- Library/tool comparisons
-- Known issues with the current approach
+**For each strategy used:**
+- Record the exact queries executed
+- Note which sources returned useful vs noise
+- Cite findings with source URLs/paths
+- Stop searching a source when marginal returns diminish
 
-**Official documentation** — Check for:
-- Recent version changes affecting the project
-- Deprecated features still in use
-- Recommended patterns not yet adopted
+**Quick Search Mode (Optional):** If the user's request is purely informational ("search for X"), offer a lightweight path:
 
-Record each source examined and key findings. Note when sources disagree.
+```
+🐺 This looks like a search request, not a full investigation.
+Want me to:
+  1. Quick Search — Targeted search per strategy above, return findings only
+  2. Full Investigation — Complete 7-step audit with report/build
+
+Which?
+```
+
+Quick Search runs Step 0.5 → Step 7 only, returns synthesized findings. No report, no build.
+
+**Interactive Refinement:** After Step 7 initial results, offer refinement before committing to full investigation (Steps 8a/8b):
+
+```
+🐺 Initial search complete. Before proceeding:
+  1. Continue → Full investigation (report or build)
+  2. Deeper on finding #N — Re-search with expanded budget
+  3. Skip source type — Exclude community-pulse / Reddit / etc.
+  4. Change strategy — Switch to rule-id-driven / targeted-docs / etc.
+  5. Export findings only — JSON / Markdown / SARIF (see Output Formats)
+```
+
+---
+
+### Step 7.5: Output Formats
+
+**Investigator mode supports multiple output formats.** Default is HTML; others available on request or via Interactive Refinement.
+
+| Format | Path | Use Case |
+|--------|------|----------|
+| HTML (default) | `docs/surgical-investigation-report.html` | Human review, interactive diagrams |
+| JSON | `docs/surgical-investigation-report.json` | Programmatic consumption, CI integration |
+| Markdown | `docs/surgical-investigation-report.md` | Git docs, PR descriptions, wiki |
+| SARIF | `docs/surgical-investigation-report.sarif` | Static analysis tooling, GitHub code scanning |
+
+**JSON Schema** (abbreviated):
+```json
+{
+  "project": "string",
+  "timestamp": "ISO8601",
+  "mode": "investigator|project-manager",
+  "strategy": "string",
+  "mission": { "stated": "", "actual": "", "gap": "" },
+  "dependencies": [{ "name": "", "version": "", "latest": "", "status": "", "tier": 0 }],
+  "practices": { "codeQuality": [], "architecture": [], "testing": [], "security": [], "performance": [], "documentation": [] },
+  "optimality": { "algorithm": "", "complexity": "", "resources": "", "alternatives": [], "scalability": "" },
+  "agentFiles": [],
+  "externalResearch": [{ "strategy": "", "query": "", "source": "", "tier": 0, "finding": "", "url": "" }],
+  "recommendations": [{ "priority": "high|medium|low", "title": "", "why": "", "what": "", "effort": "", "source": "" }],
+  "diagrams": { "backend": "", "frontend": "", "research": "", "entire": "" }
+}
+```
+
+**SARIF** follows the standard schema — compatible with GitHub Code Scanning, VS Code, etc.
+
+All formats include the same data; HTML adds interactivity.
 
 ---
 
@@ -360,9 +490,36 @@ Synthesize results in the main agent. Don't dispatch more subagents than you hav
 
 ## Related Skills
 
+**Core (always relevant):**
 - **superpowers:executing-plans** — use if the investigation produces a plan to execute
 - **superpowers:verification-before-completion** — always apply before claiming the investigation is done
 - **superpowers:systematic-debugging** — use if investigation uncovers a specific bug to fix
+
+**AgentSurgery Family (compose for specialized work):**
+- **surgical-orchestration** — multi-agent orchestration; use for coordinating parallel subagents in Steps 3, 7
+- **surgical-implementation** — plan-driven implementation pipeline; use for Step 3 (dep audit), Step 8b (YOLO build)
+- **surgical-hermesdothealth** — diagnose `.hermes` folder health; use for Step 6 (agent files audit)
+
+**Specialized Skills (delegate per strategy):**
+- **code-review-and-quality** — Step 4 best practices assessment (code quality, architecture, security)
+- **parallel-cli** — Step 7 external research (web search, deep research)
+- **competitor-news-monitor** — Step 7 community-pulse strategy
+- **grounded-citations** — Step 7 source credibility & citation
+- **software-development/requesting-code-review** — Step 4 security scan & quality gates
+
+**Strategy → Skill Mapping:**
+| Strategy | Primary Skill(s) |
+|----------|-----------------|
+| codebase-first | code-review-and-quality |
+| targeted-docs | grounded-citations, parallel-cli |
+| error-driven | systematic-debugging |
+| rule-id-driven | code-review-and-quality |
+| cve-driven | surgical-implementation (dep audit) |
+| pattern-driven | surgical-orchestration, parallel-cli |
+| community-pulse | competitor-news-monitor, parallel-cli |
+| full-sweep | All of the above (orchestrated) |
+
+**Composition Principle:** Surgical-Investigation is the *orchestrator*. It sequences calls to specialized skills rather than duplicating their logic. Each step maps to a skill call with clear input/output contracts.
 
 ---
 
