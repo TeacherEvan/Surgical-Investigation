@@ -20,10 +20,25 @@
 # Preserved: anything matching _archive* (local-only investigation artifacts),
 #            __pycache__/, *.pyc — never uploaded, never deleted.
 #
-# Override targets with SKILL_TARGETS, colon-separated, relative to $HOME:
-#   SKILL_TARGETS=".hermes/skills/surgical-investigation" ./scripts/sync-skill.sh check
+# Must run FROM a git checkout. The script refuses to mirror from a directory that
+# is not the toplevel of its own clone: `git -C` otherwise walks up to a parent
+# repository and reports a commit that has nothing to do with this skill
+# (observed: a stray directory inside ~/.hermes reported ~/.hermes's HEAD).
 #
-# Exit codes: 0 = in sync / success, 1 = drift detected (check, verify), 2 = usage.
+# The skill name comes from SKILL.md frontmatter, NOT from the directory name, so
+# a checkout like .../cache/surgical-inv-src still targets .../surgical-investigation.
+#
+# The Hermes target is DISCOVERED, because the install may be flat or nested one
+# level under a category directory:
+#   .hermes/skills/surgical-investigation
+#   .hermes/skills/<category>/surgical-investigation     <- e.g. skills/DOCTOR/
+# If neither exists, the flat path is kept so `sync` can create it.
+#
+# Override targets with SKILL_TARGETS, colon-separated, relative to $HOME:
+#   SKILL_TARGETS=".hermes/skills/DOCTOR/surgical-investigation" ./scripts/sync-skill.sh check
+#
+# Exit codes: 0 = in sync / success, 1 = drift detected (check, verify),
+#             2 = usage error, or not run from a git checkout.
 
 set -euo pipefail
 
@@ -32,20 +47,46 @@ MODE="${1:-check}"
 
 case "$MODE" in
   check|sync|verify|list) ;;
-  -h|--help|help) sed -n '2,27p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit 0 ;;
+  # print the whole leading comment block, however long it grows
+  -h|--help|help) awk 'NR>1 && /^#/ {sub(/^# ?/, ""); print; next} NR>1 {exit}' "${BASH_SOURCE[0]}"; exit 0 ;;
   *) echo "usage: $(basename "$0") [check|sync|verify|list]" >&2; exit 2 ;;
 esac
+
+# --- refuse to run outside a real checkout -------------------------------------
+TOPLEVEL="$(git -C "$REPO_DIR" rev-parse --show-toplevel 2>/dev/null || true)"
+if [ "$TOPLEVEL" != "$REPO_DIR" ]; then
+  echo "ERROR: not a git checkout of this skill repo." >&2
+  echo "       dir      : $REPO_DIR" >&2
+  echo "       toplevel : ${TOPLEVEL:-<none>}" >&2
+  echo "       Clone the repo and run scripts/sync-skill.sh from inside the clone." >&2
+  exit 2
+fi
+
+# --- skill name: frontmatter wins over directory name --------------------------
+# A checkout may be named anything (e.g. .../cache/surgical-inv-src); the installs
+# are always named after the skill, which is what SKILL.md frontmatter declares.
+SKILL_NAME="$(sed -n 's/^name:[[:space:]]*//p' "$REPO_DIR/SKILL.md" 2>/dev/null | head -1 | tr -d '"[:space:]')"
+[ -n "$SKILL_NAME" ] || SKILL_NAME="$(basename "$REPO_DIR")"
 
 # --- install targets (relative to $HOME) --------------------------------------
 if [ -n "${SKILL_TARGETS:-}" ]; then
   IFS=':' read -r -a TARGETS <<< "$SKILL_TARGETS"
 else
-  TARGETS=(
-    ".hermes/skills/surgical-investigation"                        # Hermes (primary)
-    ".config/opencode/skills/surgical-investigation"               # OpenCode
-    ".gemini/skills/surgical-investigation"                        # Gemini CLI
-    ".gemini/surgical/surgical-investigation"                      # Gemini CLI (bundle)
-    ".gemini/antigravity-cli/skills/surgical-investigation"        # Antigravity CLI
+  # Hermes: discover the install — flat, or nested one level under a category dir.
+  TARGETS=()
+  shopt -s nullglob
+  for cand in "$HOME/.hermes/skills/$SKILL_NAME" "$HOME"/.hermes/skills/*/"$SKILL_NAME"; do
+    [ -d "$cand" ] && TARGETS+=("${cand#"$HOME"/}")
+  done
+  shopt -u nullglob
+  # Nothing installed yet — keep the documented flat path so `sync` can create it.
+  [ "${#TARGETS[@]}" -gt 0 ] || TARGETS=(".hermes/skills/$SKILL_NAME")
+
+  TARGETS+=(
+    ".config/opencode/skills/$SKILL_NAME"               # OpenCode
+    ".gemini/skills/$SKILL_NAME"                        # Gemini CLI
+    ".gemini/surgical/$SKILL_NAME"                      # Gemini CLI (bundle)
+    ".gemini/antigravity-cli/skills/$SKILL_NAME"        # Antigravity CLI
   )
 fi
 
@@ -75,7 +116,8 @@ byte_compare() {
 }
 
 echo "repo   : $REPO_DIR"
-echo "commit : $(git -C "$REPO_DIR" rev-parse --short HEAD 2>/dev/null || echo 'not a git repo')"
+echo "skill  : $SKILL_NAME"
+echo "commit : $(git -C "$REPO_DIR" rev-parse --short HEAD) ($(git -C "$REPO_DIR" rev-parse --abbrev-ref HEAD))"
 echo "mode   : $MODE"
 echo
 

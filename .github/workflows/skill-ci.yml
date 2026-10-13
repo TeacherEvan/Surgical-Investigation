@@ -82,12 +82,13 @@ jobs:
       - name: Check tests
         run: |
           test -d tests || (echo 'Missing tests/ directory'; exit 1)
-          test -f tests/skills/test_surgical_investigation_skill.py || (echo 'Missing test file'; exit 1)
+          test -f tests/skills/test_surgical_investigation_skill.py || (echo 'Missing skill test file'; exit 1)
+          test -f tests/scripts/test_sync_skill_targets.py || (echo 'Missing sync-skill test file'; exit 1)
           echo 'Tests present'
 
       - name: Run tests
         run: |
-          python -m pytest tests/skills/test_surgical_investigation_skill.py -v --tb=short
+          python -m pytest tests/ -v --tb=short
 
       - name: Check file sizes
         run: |
