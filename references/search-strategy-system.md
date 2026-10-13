@@ -170,3 +170,22 @@ After Step 7 initial results, before committing to Steps 8a/8b:
   4. Change strategy — Switch to rule-id-driven / targeted-docs / etc.
   5. Export findings only — JSON / Markdown / SARIF
 ```
+
+---
+
+## Comparative Analysis Decomposition (for Country A vs Country B / Option X vs Option Y)
+
+When comparing two or more distinct systems/options, decompose with mirrored subagents per option plus shared foundation:
+
+| Subagent | Domain Focus | Sources |
+|----------|--------------|---------|
+| 1A. Option A Official | Authority sources for Option A | Gov A portals, statutes, official docs |
+| 1B. Option B Official | Authority sources for Option B | Gov B portals, statutes, official docs |
+| 2A. Option A Policy | Recent changes in Option A | Gov A announcements, legal blogs |
+| 2B. Option B Policy | Recent changes in Option B | Gov B announcements, legal blogs |
+| 3. Community Intelligence | Lived experience for both options | Reddit, forums, expat communities (both) |
+| 4. Alternative & Fallback | Third options, eligibility, trade-offs | Comparison sites, specialist advisors |
+| 5. Practical Logistics | Costs, housing, tax, daily ops (both) | Cost-of-living, relocation, tax advisers |
+| 6. Risk & Cross-Border | Failure modes, appeals, cross-border tax, document pipelines | Legal resources, tax treaties, case law |
+
+Key: Shared foundation (documents, profile) researched once. Option-specific tracks in parallel. Convergent settlement researched once.
