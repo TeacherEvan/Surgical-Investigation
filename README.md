@@ -114,6 +114,32 @@ If you have the full AgentSurgery set installed, Surgical-Investigation is inclu
 - **Surgical-HermesDotHealth** — Diagnose `.hermes` folder health
 - **Surgical-Investigation** — This skill
 
+## Keeping Installs in Sync
+
+This repo is the **canonical source**. Installs are copies, and copies drift — the
+checksum-verified reality after v1.1.0 was that three installs still sat on the old
+version while the repo had moved on. Don't fix that by hand:
+
+```bash
+./scripts/sync-skill.sh check    # show what differs, change nothing (exit 1 if stale)
+./scripts/sync-skill.sh sync     # bring every install up to date
+./scripts/sync-skill.sh verify   # byte-compare each install, change nothing
+```
+
+Default targets (relative to `$HOME`), override with `SKILL_TARGETS=a:b:c`:
+
+| Target | Agent |
+|---|---|
+| `.hermes/skills/surgical-investigation` | Hermes (primary) |
+| `.config/opencode/skills/surgical-investigation` | OpenCode |
+| `.gemini/skills/surgical-investigation` | Gemini CLI |
+| `.gemini/surgical/surgical-investigation` | Gemini CLI (bundle) |
+| `.gemini/antigravity-cli/skills/surgical-investigation` | Antigravity CLI |
+
+Mirrored: `SKILL.md`, `README.md`, `templates/`, `references/`, `docs/`.
+Never mirrored or deleted: `.git/`, `.github/`, `tests/`, `scripts/`, and anything
+matching `_archive*` — past investigation outputs stay put and never propagate.
+
 ## How It Works
 
 1. **Mode selection** — Skill prompts you: Investigator or Project-Manager?
@@ -151,6 +177,20 @@ surgical-investigation/
 │   ├── mermaid-best-practices.md         # Diagram size limits, naming, subgraphs, color coding
 │   ├── sarif-schema.md                   # SARIF 2.1.0 schema mapping and rules
 │   └── skill-authoring-standards.md      # Hermes skill authoring guidelines and checklist
+├── docs/                                 # Investigation reports and research notes
+│   ├── surgical-investigation-report.html # Generated report (interactive, default)
+│   ├── surgical-investigation-report.json # Generated report (machine-readable)
+│   ├── surgical-investigation-report.md   # Generated report (documentation/PRs)
+│   ├── surgical-investigation-report.sarif # Generated report (code scanning)
+│   ├── recommendations.md                # Actionable recommendations with endpoints
+│   ├── research-findings.mmd             # Mermaid: external research map
+│   ├── backend-architecture.mmd          # Mermaid: backend architecture
+│   ├── frontend-architecture.mmd         # Mermaid: frontend architecture
+│   ├── entire-project.mmd                # Mermaid: whole-project view
+│   ├── external-research/                # Tier 1-2 source notes
+│   └── investigation-notes/              # Meta-investigation run notes
+├── scripts/
+│   └── sync-skill.sh                     # Mirror assets into local agent installs
 └── tests/
     └── skills/
         └── test_surgical_investigation_skill.py  # Unit and integration test suite
