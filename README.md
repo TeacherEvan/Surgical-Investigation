@@ -191,7 +191,8 @@ surgical-investigation/
 │   ├── external-service-auth.md          # External service authorization layers & debug rules
 │   ├── mermaid-best-practices.md         # Diagram size limits, naming, subgraphs, color coding
 │   ├── sarif-schema.md                   # SARIF 2.1.0 schema mapping and rules
-│   └── skill-authoring-standards.md      # Hermes skill authoring guidelines and checklist
+│   ├── skill-authoring-standards.md      # Hermes skill authoring guidelines and checklist
+│   └── comparative-analysis-pattern.md   # Comparative decision analysis (multi-option)
 ├── docs/                                 # Investigation reports and research notes
 │   ├── surgical-investigation-report.html # Generated report (interactive, default)
 │   ├── surgical-investigation-report.json # Generated report (machine-readable)

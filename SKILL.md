@@ -1,7 +1,7 @@
 ---
 name: surgical-investigation
 description: "Use when investigating: strategy search, multi-output."
-version: 1.2.0
+version: 1.3.0
 author: Fenrie (Lea's AI wolf), Hermes Agent
 license: MIT
 platforms: [linux, macos, windows]
@@ -23,6 +23,7 @@ Comprehensive project investigation with two modes: **Investigator** (analyze ev
 - User wants to understand the state of a codebase before deciding what to do
 - User wants recommendations for what features the project should add next
 - User wants the agent to investigate AND then implement fixes without review
+- User needs a **comparative** decision analysis — two or more distinct systems, platforms, countries, or pathways weighed against one another (see `references/comparative-analysis-pattern.md`)
 
 ## When Not to Use
 
@@ -534,7 +535,8 @@ surgical-investigation/
 │   ├── external-service-auth.md          # External service authorization layers & debug rules
 │   ├── mermaid-best-practices.md         # Diagram size limits, naming, subgraphs, color coding
 │   ├── sarif-schema.md                   # SARIF 2.1.0 schema mapping and rules
-│   └── skill-authoring-standards.md      # Hermes skill authoring guidelines and checklist
+│   ├── skill-authoring-standards.md      # Hermes skill authoring guidelines and checklist
+│   └── comparative-analysis-pattern.md   # Comparative decision analysis (multi-option)
 └── tests/
     └── skills/
         └── test_surgical_investigation_skill.py  # Unit and integration test suite
@@ -588,6 +590,7 @@ surgical-investigation/
 - `references/mermaid-best-practices.md` — Size limits, naming, subgraph usage, color coding, common patterns for Step 8a diagrams
 - `references/sarif-schema.md` — SARIF 2.1.0 required fields, mapping to investigation output, compatibility, common mistakes (Step 7.5 JSON format)
 - `references/skill-authoring-standards.md` — Hermes skill file requirements, frontmatter rules, body structure, size limits, reference/template file rules, test requirements
+- `references/comparative-analysis-pattern.md` — Comparative decision analysis across two or more options (systems, countries, platforms, pathways): Step 1 scope additions, comparison-matrix format, and recommendation structure for comparative outputs
 
 ---
 
