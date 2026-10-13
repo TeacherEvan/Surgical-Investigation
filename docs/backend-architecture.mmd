@@ -1,0 +1,38 @@
+flowchart TD
+    subgraph Input["Execution Trigger"]
+        U["User Prompt / Audit Request"] --> S0["Step 0: Mode Selection Prompt"]
+        S0 --> Mode{"Selected Mode?"}
+    end
+
+    subgraph InvestigatorFlow["Investigator Pipeline"]
+        Mode -->|1. Investigator| S05["Step 0.5: Search Strategy Selection"]
+        S05 --> S07["Step 0.7: Cache Lookup / Check Fingerprint"]
+        S07 --> S1["Step 1: Define Scope & Confirmation"]
+        S1 --> S2["Step 2: Mission Verification"]
+        S2 --> S3["Step 3: Dependency Audit"]
+        S3 --> S4["Step 4: Best Practices Assessment"]
+        S4 --> S5["Step 5: Optimality Analysis"]
+        S5 --> S6["Step 6: Agent Files Audit"]
+        S6 --> S7["Step 7: Strategy-Driven External Research"]
+        S7 --> S75["Step 7.5: Multi-Format Serialization"]
+        S75 --> S8a["Step 8a: Generate HTML, JSON, MD, SARIF & 4 Diagrams"]
+    end
+
+    subgraph ProjectManagerFlow["Project-Manager Pipeline (YOLO)"]
+        Mode -->|2. Project-Manager| S1PM["Steps 1-7: Same Deep Investigation"]
+        S1PM --> S8b["Step 8b: YOLO Direct Execution"]
+        S8b --> PMBuild["Apply Code Fixes & Refactors"]
+        PMBuild --> PMVerify["Verify Code & Pass Tests"]
+        PMVerify --> PMClose["Exact Phrase: 'This was the best I can do!'"]
+    end
+
+    subgraph EscalationGate["Escalation Subsystem"]
+        Challenge{"User Asks: 'Is this the best you can do?'"}
+        S8a --> Challenge
+        Challenge -->|Yes| Escalate["4-Pillar Escalation Protocol"]
+        Escalate --> P1["1. Subagent Depth"]
+        Escalate --> P2["2. Multi-Format Expansion"]
+        Escalate --> P3["3. External Verification Tier 1-2"]
+        Escalate --> P4["4. Actionable Endpoints & Controls"]
+        P1 & P2 & P3 & P4 --> S9["Step 9: Verification & Closeout"]
+    end

@@ -1,0 +1,110 @@
+{
+  "project": "[PROJECT NAME]",
+  "timestamp": "[DATE]",
+  "mode": "[MODE: investigator|project-manager]",
+  "strategy": "[SEARCH STRATEGY: codebase-first|targeted-docs|error-driven|rule-id-driven|cve-driven|pattern-driven|community-pulse|full-sweep|combo]",
+  "mission": {
+    "stated": "[STATED PURPOSE]",
+    "actual": "[ACTUAL STATE]",
+    "gap": "[STATED VS ACTUAL GAP]"
+  },
+  "dependencies": [
+    {
+      "name": "[DEP NAME]",
+      "version": "[CURRENT VERSION]",
+      "latest": "[LATEST VERSION]",
+      "status": "[good|warn|bad]",
+      "tier": 1,
+      "notes": "[NOTES / CVEs]"
+    }
+  ],
+  "practices": {
+    "codeQuality": [
+      {
+        "status": "[good|warn|bad]",
+        "finding": "[DESCRIPTION]",
+        "source": "[SOURCE CITATION WITH TIER]"
+      }
+    ],
+    "architecture": [
+      {
+        "status": "[good|warn|bad]",
+        "finding": "[DESCRIPTION]",
+        "source": "[SOURCE CITATION WITH TIER]"
+      }
+    ],
+    "testing": [
+      {
+        "status": "[good|warn|bad]",
+        "finding": "[DESCRIPTION]",
+        "source": "[SOURCE CITATION WITH TIER]"
+      }
+    ],
+    "security": [
+      {
+        "status": "[good|warn|bad]",
+        "finding": "[DESCRIPTION]",
+        "source": "[SOURCE CITATION WITH TIER]"
+      }
+    ],
+    "performance": [
+      {
+        "status": "[good|warn|bad]",
+        "finding": "[DESCRIPTION]",
+        "source": "[SOURCE CITATION WITH TIER]"
+      }
+    ],
+    "documentation": [
+      {
+        "status": "[good|warn|bad]",
+        "finding": "[DESCRIPTION]",
+        "source": "[SOURCE CITATION WITH TIER]"
+      }
+    ]
+  },
+  "optimality": {
+    "algorithm": "[ALGORITHM FIT EVALUATION]",
+    "complexity": "[COMPLEXITY EVALUATION]",
+    "resources": "[RESOURCE USAGE EVALUATION]",
+    "alternatives": [
+      "[ALTERNATIVE APPROACHES CONSIDERED]"
+    ],
+    "scalability": "[SCALABILITY AT 10X LOAD]"
+  },
+  "agentFiles": [
+    {
+      "type": "[skills|memory|config|docs|kanban|tools]",
+      "path": "[FILE PATH]",
+      "status": "[current|stale|missing]",
+      "notes": "[AUDIT NOTES]"
+    }
+  ],
+  "externalResearch": [
+    {
+      "strategy": "[STRATEGY NAME]",
+      "query": "[SEARCH QUERY]",
+      "source": "[SOURCE NAME]",
+      "tier": 1,
+      "finding": "[RESEARCH FINDING]",
+      "url": "[SOURCE URL]"
+    }
+  ],
+  "recommendations": [
+    {
+      "priority": "[high|medium|low]",
+      "title": "[RECOMMENDATION TITLE — ACTIONABLE & CONCRETE]",
+      "why": "[WHY IT MATTERS]",
+      "what": "[WHAT EXACTLY TO BUILD/CHANGE]",
+      "endpoint": "[REST/GRAPHQL ENDPOINT OR CLI COMMAND]",
+      "interactiveControl": "[USER-FACING INTERACTION OR CONTROL]",
+      "effort": "[ESTIMATED EFFORT]",
+      "source": "[SOURCE CITATION WITH TIER]"
+    }
+  ],
+  "diagrams": {
+    "backend": "[BACKEND MMD CONTENT OR RELATIVE PATH]",
+    "frontend": "[FRONTEND MMD CONTENT OR RELATIVE PATH]",
+    "research": "[RESEARCH MMD CONTENT OR RELATIVE PATH]",
+    "entire": "[ENTIRE PROJECT MMD CONTENT OR RELATIVE PATH]"
+  }
+}

@@ -1,0 +1,134 @@
+{
+  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "Surgical-Investigation",
+          "version": "1.1.0",
+          "informationUri": "https://github.com/TeacherEvan/Surgical-Investigation",
+          "rules": [
+            {
+              "id": "MISSION-GAP",
+              "name": "Mission Gap Finding",
+              "shortDescription": { "text": "Stated purpose vs actual implementation divergence" },
+              "fullDescription": { "text": "Identified during Step 2 (Mission Verification) of surgical-investigation." },
+              "defaultConfiguration": { "level": "warning" }
+            },
+            {
+              "id": "DEPENDENCY-AUDIT",
+              "name": "Dependency Audit Finding",
+              "shortDescription": { "text": "Dependency version, security vulnerability, or maintenance finding" },
+              "fullDescription": { "text": "Found during Step 3 (Dependency Audit) of surgical-investigation." },
+              "defaultConfiguration": { "level": "error" }
+            },
+            {
+              "id": "PRACTICE-REVIEW",
+              "name": "Best Practice Assessment",
+              "shortDescription": { "text": "Code quality, architecture, testing, security, performance, or docs issue" },
+              "fullDescription": { "text": "Found during Step 4 (Engineering Best Practices) of surgical-investigation." },
+              "defaultConfiguration": { "level": "warning" }
+            },
+            {
+              "id": "OPTIMALITY-REVIEW",
+              "name": "Implementation Optimality Finding",
+              "shortDescription": { "text": "Algorithm fit, computational complexity, resource usage, or scalability hotspot" },
+              "fullDescription": { "text": "Found during Step 5 (Implementation Optimality Check) of surgical-investigation." },
+              "defaultConfiguration": { "level": "note" }
+            },
+            {
+              "id": "AGENT-FILES-REVIEW",
+              "name": "Agent Files & Docs Audit Finding",
+              "shortDescription": { "text": "Skills, memory, config, docs, or kanban discrepancies" },
+              "fullDescription": { "text": "Found during Step 6 (Agent Files Audit) of surgical-investigation." },
+              "defaultConfiguration": { "level": "warning" }
+            },
+            {
+              "id": "RESEARCH-FINDING",
+              "name": "External Research Finding",
+              "shortDescription": { "text": "Strategy-driven finding from external sources with credibility tier" },
+              "fullDescription": { "text": "Found during Step 7 (External Source Investigation) of surgical-investigation." },
+              "defaultConfiguration": { "level": "note" }
+            },
+            {
+              "id": "RECOMMENDATION",
+              "name": "Feature Recommendation",
+              "shortDescription": { "text": "Actionable feature recommendation with endpoint or interactive control" },
+              "fullDescription": { "text": "Produced during Step 8a (Recommendations) of surgical-investigation." },
+              "defaultConfiguration": { "level": "note" }
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "DEPENDENCY-AUDIT",
+          "ruleIndex": 1,
+          "level": "error",
+          "message": {
+            "text": "[FINDING MESSAGE — e.g. Dependency 'axios' at v0.21.0 has known CVE; upgrade to v1.6.0 recommended]"
+          },
+          "properties": {
+            "priority": "high",
+            "why": "[WHY THIS MATTERS]",
+            "what": "[WHAT EXACTLY TO BUILD/CHANGE]",
+            "effort": "[ESTIMATED EFFORT]",
+            "source": "[SOURCE CITATION WITH TIER]"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "[RELATIVE FILE PATH — e.g. package.json]",
+                  "uriBaseId": "PROJECTROOT"
+                },
+                "region": {
+                  "startLine": 1,
+                  "startColumn": 1
+                }
+              },
+              "message": {
+                "text": "[LOCATION CONTEXT]"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "RECOMMENDATION",
+          "ruleIndex": 6,
+          "level": "note",
+          "message": {
+            "text": "[RECOMMENDATION TITLE — e.g. Add batch export endpoint with date range filtering]"
+          },
+          "properties": {
+            "priority": "high",
+            "why": "[WHY THIS MATTERS]",
+            "what": "[WHAT EXACTLY TO BUILD/CHANGE]",
+            "endpoint": "[ENDPOINT OR CLI COMMAND — e.g. POST /api/v1/batch/export]",
+            "interactiveControl": "[INTERACTIVE CONTROL — e.g. Date range picker slider with preview]",
+            "effort": "[ESTIMATED EFFORT]",
+            "source": "[SOURCE CITATION WITH TIER]"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "[TARGET FILE OR MODULE]",
+                  "uriBaseId": "PROJECTROOT"
+                },
+                "region": {
+                  "startLine": 1,
+                  "startColumn": 1
+                }
+              },
+              "message": {
+                "text": "[RECOMMENDED IMPLEMENTATION SITE]"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

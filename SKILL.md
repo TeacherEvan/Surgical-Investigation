@@ -1,7 +1,7 @@
 ---
 name: surgical-investigation
 description: "Use when investigating: strategy search, multi-output."
-version: 1.1.0
+version: 1.2.0
 author: Fenrie (Lea's AI wolf), Hermes Agent
 license: MIT
 platforms: [linux, macos, windows]
@@ -24,7 +24,8 @@ Comprehensive project investigation with two modes: **Investigator** (analyze ev
 - User wants recommendations for what features the project should add next
 - User wants the agent to investigate AND then implement fixes without review
 
-Do NOT use for:
+## When Not to Use
+
 - Quick status checks (use lighter skills)
 - Tasks where the user already has a specific implementation plan
 
@@ -335,14 +336,14 @@ Quick Search runs Step 0.5 → Step 7 only, returns synthesized findings. No rep
 
 ### Step 7.5: Output Formats
 
-**Investigator mode supports multiple output formats.** Default is HTML; others available on request or via Interactive Refinement.
+**Investigator mode supports multiple output formats.** Default is HTML; others available on request, for CI pipelines, or via Interactive Refinement.
 
-| Format | Path | Use Case |
-|--------|------|----------|
-| HTML (default) | `docs/surgical-investigation-report.html` | Human review, interactive diagrams |
-| JSON | `docs/surgical-investigation-report.json` | Programmatic consumption, CI integration |
-| Markdown | `docs/surgical-investigation-report.md` | Git docs, PR descriptions, wiki |
-| SARIF | `docs/surgical-investigation-report.sarif` | Static analysis tooling, GitHub code scanning |
+| Format | Template | Output Path | Use Case |
+|--------|----------|-------------|----------|
+| HTML (default) | `templates/report.html` | `docs/surgical-investigation-report.html` | Human review, interactive diagrams, action buttons |
+| JSON | `templates/report.json` | `docs/surgical-investigation-report.json` | Programmatic consumption, CI integration |
+| Markdown | `templates/report.md` | `docs/surgical-investigation-report.md` | Git docs, PR descriptions, wiki |
+| SARIF | `templates/report.sarif` | `docs/surgical-investigation-report.sarif` | Static analysis tooling, GitHub code scanning |
 
 **JSON Schema** (abbreviated):
 ```json
@@ -357,30 +358,34 @@ Quick Search runs Step 0.5 → Step 7 only, returns synthesized findings. No rep
   "optimality": { "algorithm": "", "complexity": "", "resources": "", "alternatives": [], "scalability": "" },
   "agentFiles": [],
   "externalResearch": [{ "strategy": "", "query": "", "source": "", "tier": 0, "finding": "", "url": "" }],
-  "recommendations": [{ "priority": "high|medium|low", "title": "", "why": "", "what": "", "effort": "", "source": "" }],
+  "recommendations": [{ "priority": "high|medium|low", "title": "", "why": "", "what": "", "endpoint": "", "interactiveControl": "", "effort": "", "source": "" }],
   "diagrams": { "backend": "", "frontend": "", "research": "", "entire": "" }
 }
 ```
 
-**SARIF** follows the standard schema — compatible with GitHub Code Scanning, VS Code, etc.
+**SARIF** follows the standard SARIF 2.1.0 schema (see `references/sarif-schema.md`) — compatible with GitHub Code Scanning, VS Code, and security dashboards.
 
-All formats include the same data; HTML adds interactivity.
+All formats include the same underlying data; HTML adds browser interactivity, while JSON and SARIF enable automated gates.
 
 ---
 
-### Step 8a: Investigator Mode — Generate HTML Report
+### Step 8a: Investigator Mode — Generate Reports and Diagrams
 
 Create `docs/` if it doesn't exist. Generate:
 
-**Four Mermaid diagram files** (also embedded in the report):
+**Four Mermaid diagram files** (also embedded in the reports):
 - `docs/backend-architecture.mmd`
 - `docs/frontend-architecture.mmd`
 - `docs/research-findings.mmd`
 - `docs/entire-project.mmd`
 
-**HTML report:** `docs/surgical-investigation-report.html`
+**Reports:**
+- `docs/surgical-investigation-report.html` (always generated)
+- `docs/surgical-investigation-report.json` (generated upon request, for CI, or during "Best You Can Do" escalation)
+- `docs/surgical-investigation-report.md` (generated upon request, for PR docs, or during "Best You Can Do" escalation)
+- `docs/surgical-investigation-report.sarif` (generated upon request, for code scanning, or during "Best You Can Do" escalation)
 
-Use the template at `templates/report.html` (see linked files below). Fill in all `[PLACEHOLDER]` values with actual findings.
+Use the templates in `templates/` (`report.html`, `report.json`, `report.md`, `report.sarif`). Fill in all `[PLACEHOLDER]` values with actual findings.
 
 **Report must include these sections:**
 1. Project mission (stated vs actual)
@@ -393,11 +398,11 @@ Use the template at `templates/report.html` (see linked files below). Fill in al
 8. Interactive report features (navigation, Mermaid rendering, follow-up request button, IMPLEMENT button)
 
 **After generating:**
-- Tell the user the report location
+- Tell the user the report location(s)
 - Summarize top 3-5 findings
 - Tell them about the "IMPLEMENT FINDINGS/RECOMMENDATIONS" button
 
-See `templates/report.html` for the full HTML template.
+See `templates/report.html`, `templates/report.json`, `templates/report.md`, and `templates/report.sarif` for the templates.
 
 ---
 
@@ -485,6 +490,55 @@ Synthesize results in the main agent. Don't dispatch more subagents than you hav
 4. Did I note what I couldn't check?
 5. (Investigator) Does the report have all 4 diagrams AND the feature recommendations section?
 6. (Project-Manager) Did I actually build something, or just plan to?
+7. If the user challenged with "Is this the best you can do?", did I execute the 4-pillar escalation protocol below?
+
+---
+
+## "Best You Can Do" Escalation Protocol
+
+When the user asks "Is this the best you can do?", "Can you do better?", or challenges investigation thoroughness, this is not a rhetorical check — it is a mandate to go deeper. Never respond with a defensive restatement of existing findings. Instead, execute this four-pillar escalation:
+
+1. **Subagent Depth (Parallel Multi-Strategy Retrieval):**
+   - Dispatch parallel subagents across adjacent search strategies (e.g., if initial run used `codebase-first`, branch into `targeted-docs`, `cve-driven`, and `pattern-driven`).
+   - Query multiple source types concurrently rather than relying on a single retrieval vector.
+   - Respect per-strategy search budgets while exhausting relevant tiers.
+
+2. **Multi-Format Output Expansion:**
+   - Generate all 4 output formats (`.html`, `.json`, `.md`, `.sarif`) in `docs/` using templates from `templates/` rather than only HTML.
+   - Ensure each format contains identical core findings, with SARIF mapped to standard rule IDs and HTML providing interactive diagrams.
+
+3. **External Verification (Tier 1-2 Grounding):**
+   - Cross-check internal deductions against Tier 1 sources (official documentation, vendor advisories, RFC specs) and Tier 2 sources (accepted issues, official repo discussions).
+   - Ensure every claim, dependency flag, and optimality critique cites an authoritative source with tier weighting (e.g., `[Tier 1: Docs]`).
+
+4. **Actionable Recommendations with Concrete Endpoints & Controls:**
+   - Reject vague advice ("improve performance", "refactor auth").
+   - Every recommendation must include concrete technical specs: REST/GraphQL endpoint path, payload structure, CLI command syntax, webhook event name, or UI widget specification (per `references/feature-recommendation-format.md`).
+   - If findings lack concrete endpoints and interactive controls, the investigation is incomplete — fix it before answering.
+
+---
+
+## Skill Structure
+
+```
+surgical-investigation/
+├── SKILL.md                              # Skill definition and procedure rules
+├── templates/
+│   ├── report.html                       # HTML report template (interactive)
+│   ├── report.json                       # JSON report template (machine-readable)
+│   ├── report.md                         # Markdown report template (documentation/PRs)
+│   └── report.sarif                      # SARIF 2.1.0 report template (code scanning)
+├── references/
+│   ├── search-strategy-system.md         # Strategy definitions, budgets, cache, credibility, composition, output schemas
+│   ├── feature-recommendation-format.md  # Recommendation format with endpoints, controls, webhooks, widgets
+│   ├── external-service-auth.md          # External service authorization layers & debug rules
+│   ├── mermaid-best-practices.md         # Diagram size limits, naming, subgraphs, color coding
+│   ├── sarif-schema.md                   # SARIF 2.1.0 schema mapping and rules
+│   └── skill-authoring-standards.md      # Hermes skill authoring guidelines and checklist
+└── tests/
+    └── skills/
+        └── test_surgical_investigation_skill.py  # Unit and integration test suite
+```
 
 ---
 
@@ -521,6 +575,12 @@ Synthesize results in the main agent. Don't dispatch more subagents than you hav
 
 **Composition Principle:** Surgical-Investigation is the *orchestrator*. It sequences calls to specialized skills rather than duplicating their logic. Each step maps to a skill call with clear input/output contracts.
 
+**Template Files:**
+- `templates/report.html` — Interactive dark-themed HTML report with embedded Mermaid diagrams, filter controls, and action triggers
+- `templates/report.json` — Machine-readable structured findings format for automated pipelines
+- `templates/report.md` — Section-structured Markdown report for documentation, PR bodies, and wikis
+- `templates/report.sarif` — SARIF 2.1.0 static analysis report for GitHub Code Scanning and IDE integration
+
 **Reference Files:**
 - `references/search-strategy-system.md` — Strategy definitions, inference rules, budgets, credibility tiers, cache config, skill mapping, output schemas (consolidated decision tables for Step 0.5, 0.7, 7)
 - `references/feature-recommendation-format.md` — Required elements for feature-level recommendations in Step 8a
@@ -531,7 +591,17 @@ Synthesize results in the main agent. Don't dispatch more subagents than you hav
 
 ---
 
+## Author
+
+**Fenrie** — Lea's AI wolf. A protective cyber-partner built with Hermes Agent.
+
 *Fenrie's note: Investigation without action is just voyeurism. Whether reporting or building, the point is to make things better. 🐺*
+
+---
+
+## License
+
+MIT — see [LICENSE](LICENSE).
 
 ---
 
@@ -539,6 +609,10 @@ Synthesize results in the main agent. Don't dispatch more subagents than you hav
 
 **A skill can investigate itself.** Run this procedure on `Surgical-Investigation` (or any skill) using `codebase-first` + `pattern-driven` strategy. This is not vanity — it validates the skill's own claims (does the procedure work? do references match reality? is the version accurate?) and produces concrete improvements (updated docs, fixed references, new tests, version bumps). Treat it as a full-sweep audit with the skill's own codebase as the target.
 
-Pitfall: Don't treat meta-investigation as a formality. If the skill claims it supports multi-format output but only HTML exists in references/, fix it — don't document the gap and move on. A meta-investigation that doesn't change anything is a failed audit.
+Pitfall: Don't treat meta-investigation as a formality. If the skill claims it supports multi-format output but only HTML exists in references/ or templates/, fix it — don't document the gap and move on. A meta-investigation that doesn't change anything is a failed audit.
+
+Pitfall: When the user asks "Is this the best you can do?" — this is not a rhetorical check; it is a challenge to go deeper. Respond by executing the `"Best You Can Do" Escalation Protocol`: (a) adding subagent depth, (b) expanding to all output formats (HTML, JSON, SARIF, Markdown), (c) verifying results against external sources (Tier 1-2 docs), (d) ensuring every recommendation has a concrete endpoint/action. If the first pass produced findings but no actionable recommendations with endpoints, the investigation is incomplete — fix it before answering.
+
+Pitfall: Answer a depth challenge with triangulation, not a longer version of the same pass. The validated fan-out is three parallel subagents: (1) an exhaustive codebase capability inventory — every function/endpoint/schema field with file:line evidence, and critically its runtime status, (2) Tier 1-2 primary sources for the domain's required elements, (3) production-pattern case studies. Then explicitly revise the first pass, naming what changed and why — a first-pass answer is built on a partial reading of the system, and the user's challenge exists to surface exactly that.
 
 **Library shape (always-on):** This skill follows the class-level pattern: one `SKILL.md` for always-on procedure rules, a small `references/` directory for topical depth (not one file per session, not umbrella hoarding). References are named by topic (`search-strategy-system.md`, `mermaid-best-practices.md`, `sarif-schema.md`) and extend an existing file when the topic overlaps. If a reference file grows beyond ~200 lines of distinct rules, split it by sub-topic rather than appending everything.

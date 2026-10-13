@@ -1,0 +1,30 @@
+flowchart TD
+    subgraph Strategies["8 Search Strategies (Step 0.5)"]
+        CF["codebase-first (Budget: 60s, 2 agents)"]
+        TD["targeted-docs (Budget: 90s, 3 agents, 5 sources)"]
+        ED["error-driven (Budget: 90s, 3 agents, 5 sources)"]
+        RD["rule-id-driven (Budget: 60s, 2 agents, 4 sources)"]
+        CD["cve-driven (Budget: 60s, 2 agents, 3 sources)"]
+        PD["pattern-driven (Budget: 120s, 3 agents, 6 sources)"]
+        CP["community-pulse (Budget: 90s, 3 agents, 5 sources)"]
+        FS["full-sweep (Budget: 300s, 6 agents, 15 sources)"]
+    end
+
+    subgraph Caching["Incremental Cache Subsystem (Step 0.7)"]
+        CachePath["docs/external-research/.cache/"]
+        CacheKey["Key: strategy + query + fingerprint"]
+        CacheTTL["TTL: Tier 1/2: 7d | Tier 3: 3d | Tier 4/5: 1d"]
+        CachePath --- CacheKey --- CacheTTL
+    end
+
+    subgraph Credibility["Source Credibility Tiers"]
+        T1["Tier 1 (Weight 1.0): Official Docs, Specs, RFCs"]
+        T2["Tier 2 (Weight 0.8): Accepted GH Issues, SO Answers"]
+        T3["Tier 3 (Weight 0.6): Technical Blogs, Vendor Discussions"]
+        T4["Tier 4 (Weight 0.4): Reddit, HN, Dev.to, Discord"]
+        T5["Tier 5 (Weight 0.2): Unverified Web, Marketing"]
+    end
+
+    Strategies --> Caching
+    Caching --> Credibility
+    Credibility --> Synthesis["Ranked Findings & Actionable Recommendations"]

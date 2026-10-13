@@ -1,0 +1,27 @@
+flowchart LR
+    subgraph DataPipeline["Investigation Data Synthesis"]
+        CoreData["Synthesized Findings & Recommendations"]
+    end
+
+    subgraph OutputFormats["Multi-Format Delivery (Step 7.5 & 8a)"]
+        CoreData --> HTMLOut["HTML Report (Interactive)"]
+        CoreData --> JSONOut["JSON Export (CI Automation)"]
+        CoreData --> MDOut["Markdown Document (PRs & Wikis)"]
+        CoreData --> SARIFOut["SARIF 2.1.0 (Code Scanning)"]
+    end
+
+    subgraph HTMLInteraction["HTML Report Interactivity"]
+        HTMLOut --> Nav["Sticky Top Navigation Bar"]
+        HTMLOut --> MermaidRender["Inline Mermaid JS (Theme: Dark)"]
+        HTMLOut --> ModalTrigger["Follow-up Request Modal"]
+        HTMLOut --> ImplementBtn["IMPLEMENT Button Trigger"]
+        
+        ModalTrigger --> AgentBridge["Hermes Agent Bridge / Window Event"]
+        ImplementBtn --> AgentBridge
+    end
+
+    subgraph CIIntegration["CI / Static Analysis Consumption"]
+        SARIFOut --> GHScan["GitHub Code Scanning Alerts"]
+        JSONOut --> AutomatedGates["Test & Quality Gates"]
+        MDOut --> PRSummary["Pull Request Summary Comment"]
+    end

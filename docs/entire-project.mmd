@@ -1,0 +1,35 @@
+flowchart TB
+    subgraph ClientLayer["User Interaction & Activation"]
+        UserPrompt["User Prompt: 'Investigate project'"] --> S0["Step 0: Mode Selection Prompt"]
+        S0 --> S05["Step 0.5: Search Strategy Inferred/Selected"]
+    end
+
+    subgraph OrchestrationCore["Surgical-Investigation Core"]
+        S05 --> AuditLoop["7-Step Surgical Investigation Core"]
+        AuditLoop --> Step1["1. Scope Definition"]
+        AuditLoop --> Step2["2. Mission Verification"]
+        AuditLoop --> Step3["3. Dependency Audit"]
+        AuditLoop --> Step4["4. Best Practices Assessment"]
+        AuditLoop --> Step5["5. Optimality Check"]
+        AuditLoop --> Step6["6. Agent Files Audit"]
+        AuditLoop --> Step7["7. External Research"]
+    end
+
+    subgraph SkillComposition["Composed AgentSurgery Skills"]
+        Step3 -.-> SO["surgical-orchestration (Parallel Manifest Checks)"]
+        Step3 -.-> SIMPL["surgical-implementation (Dep Audit)"]
+        Step4 -.-> CRQ["code-review-and-quality"]
+        Step6 -.-> SHH["surgical-hermesdothealth (.hermes Health)"]
+        Step7 -.-> GC["grounded-citations & parallel-cli"]
+        Step7 -.-> CNM["competitor-news-monitor"]
+    end
+
+    subgraph Deliverables["Outputs & Verification"]
+        InvestigatorMode["Investigator Mode"] --> Formats["4 Deliverables (HTML, JSON, MD, SARIF)"]
+        ProjectManagerMode["Project-Manager Mode"] --> DirectBuild["YOLO Direct Build & Verify"]
+        Formats --> EscalationGate["Best You Can Do Protocol"]
+        EscalationGate --> Verification["Step 9: Closeout & Superpowers Verification"]
+    end
+
+    AuditLoop --> InvestigatorMode
+    AuditLoop --> ProjectManagerMode

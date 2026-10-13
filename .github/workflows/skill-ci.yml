@@ -53,10 +53,13 @@ jobs:
           print('Body structure valid')
           "
 
-      - name: Check template
+      - name: Check templates
         run: |
           test -f templates/report.html || (echo 'Missing templates/report.html'; exit 1)
-          echo 'Report template found'
+          test -f templates/report.json || (echo 'Missing templates/report.json'; exit 1)
+          test -f templates/report.md || (echo 'Missing templates/report.md'; exit 1)
+          test -f templates/report.sarif || (echo 'Missing templates/report.sarif'; exit 1)
+          echo 'Report templates found'
 
       - name: Check references
         run: |

@@ -123,20 +123,37 @@ If you have the full AgentSurgery set installed, Surgical-Investigation is inclu
 5. **Interactive refinement** — Optional: deeper on finding, skip source, change strategy, export format
 6. **Output** — 4 formats (Investigator) or direct build (Project-Manager)
 
+7. **Escalation protocol** — When challenged with "Is this the best you can do?", activates 4-pillar escalation: subagent depth, multi-format output expansion, Tier 1-2 external verification, and actionable endpoints/controls.
+
+## "Best You Can Do" Escalation Protocol
+
+When asked "Is this the best you can do?", the agent executes a four-pillar escalation rather than repeating findings:
+
+1. **Subagent Depth**: Spawns parallel subagents across multiple search strategies and sources.
+2. **Multi-Format Output Expansion**: Emits all 4 report formats (`.html`, `.json`, `.md`, `.sarif`) generated from dedicated templates in `templates/`.
+3. **External Verification**: Cross-references findings against Tier 1-2 authoritative sources (official documentation, vendor advisories, RFC specs).
+4. **Actionable Recommendations with Concrete Endpoints & Controls**: Replaces vague suggestions with explicit REST/GraphQL endpoints, CLI syntax, webhook event names, and interactive UI widget specs.
+
 ## Skill Structure
 
 ```
 surgical-investigation/
-├── SKILL.md                              # Skill definition
+├── SKILL.md                              # Skill definition and procedure rules
 ├── templates/
-│   └── report.html                       # HTML report template (interactive)
+│   ├── report.html                       # HTML report template (interactive)
+│   ├── report.json                       # JSON report template (machine-readable)
+│   ├── report.md                         # Markdown report template (documentation/PRs)
+│   └── report.sarif                      # SARIF 2.1.0 report template (code scanning)
 ├── references/
-│   ├── search-strategy-system.md         # Strategy definitions, budgets, cache, credibility, composition, output formats
+│   ├── search-strategy-system.md         # Strategy definitions, budgets, cache, credibility, composition, output schemas
 │   ├── feature-recommendation-format.md  # Recommendation format with endpoints, controls, webhooks, widgets
-│   └── telegram-bot-auth.md              # Telegram bot auth investigation reference
+│   ├── external-service-auth.md          # External service authorization layers & debug rules
+│   ├── mermaid-best-practices.md         # Diagram size limits, naming, subgraphs, color coding
+│   ├── sarif-schema.md                   # SARIF 2.1.0 schema mapping and rules
+│   └── skill-authoring-standards.md      # Hermes skill authoring guidelines and checklist
 └── tests/
     └── skills/
-        └── test_surgical_investigation_skill.py  # 55 tests
+        └── test_surgical_investigation_skill.py  # Unit and integration test suite
 ```
 
 ## Author

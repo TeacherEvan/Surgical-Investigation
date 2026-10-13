@@ -1,0 +1,168 @@
+{
+  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "Surgical-Investigation",
+          "version": "1.2.0",
+          "informationUri": "https://github.com/TeacherEvan/Surgical-Investigation",
+          "rules": [
+            {
+              "id": "MISSION-GAP",
+              "name": "Mission Gap Finding",
+              "shortDescription": { "text": "Stated purpose vs actual implementation divergence" },
+              "fullDescription": { "text": "Identified during Step 2 (Mission Verification) of surgical-investigation." },
+              "defaultConfiguration": { "level": "warning" }
+            },
+            {
+              "id": "DEPENDENCY-AUDIT",
+              "name": "Dependency Audit Finding",
+              "shortDescription": { "text": "Dependency version, security vulnerability, or maintenance finding" },
+              "fullDescription": { "text": "Found during Step 3 (Dependency Audit) of surgical-investigation." },
+              "defaultConfiguration": { "level": "error" }
+            },
+            {
+              "id": "PRACTICE-REVIEW",
+              "name": "Best Practice Assessment",
+              "shortDescription": { "text": "Code quality, architecture, testing, security, performance, or docs issue" },
+              "fullDescription": { "text": "Found during Step 4 (Engineering Best Practices) of surgical-investigation." },
+              "defaultConfiguration": { "level": "warning" }
+            },
+            {
+              "id": "OPTIMALITY-REVIEW",
+              "name": "Implementation Optimality Finding",
+              "shortDescription": { "text": "Algorithm fit, computational complexity, resource usage, or scalability hotspot" },
+              "fullDescription": { "text": "Found during Step 5 (Implementation Optimality Check) of surgical-investigation." },
+              "defaultConfiguration": { "level": "note" }
+            },
+            {
+              "id": "AGENT-FILES-REVIEW",
+              "name": "Agent Files & Docs Audit Finding",
+              "shortDescription": { "text": "Skills, memory, config, docs, or kanban discrepancies" },
+              "fullDescription": { "text": "Found during Step 6 (Agent Files Audit) of surgical-investigation." },
+              "defaultConfiguration": { "level": "warning" }
+            },
+            {
+              "id": "RESEARCH-FINDING",
+              "name": "External Research Finding",
+              "shortDescription": { "text": "Strategy-driven finding from external sources with credibility tier" },
+              "fullDescription": { "text": "Found during Step 7 (External Source Investigation) of surgical-investigation." },
+              "defaultConfiguration": { "level": "note" }
+            },
+            {
+              "id": "RECOMMENDATION",
+              "name": "Feature Recommendation",
+              "shortDescription": { "text": "Actionable feature recommendation with endpoint or interactive control" },
+              "fullDescription": { "text": "Produced during Step 8a (Recommendations) of surgical-investigation." },
+              "defaultConfiguration": { "level": "note" }
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "RECOMMENDATION",
+          "ruleIndex": 6,
+          "level": "note",
+          "message": {
+            "text": "Add automated SARIF upload GitHub Action workflow for PR annotations"
+          },
+          "properties": {
+            "priority": "high",
+            "why": "Enables automated code scanning alerts and annotations directly in GitHub pull requests.",
+            "what": "Add reusable GitHub Action workflow calling surgical-investigation in SARIF mode.",
+            "endpoint": "surgical-investigation run --mode investigator --format sarif --out docs/",
+            "interactiveControl": "GitHub Security tab alerts and inline PR checks",
+            "effort": "1 day",
+            "source": "OASIS SARIF 2.1.0 Specification [Tier 1]"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": ".github/workflows/skill-ci.yml",
+                  "uriBaseId": "PROJECTROOT"
+                },
+                "region": {
+                  "startLine": 1,
+                  "startColumn": 1
+                }
+              },
+              "message": {
+                "text": "Workflow definition file"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "RECOMMENDATION",
+          "ruleIndex": 6,
+          "level": "note",
+          "message": {
+            "text": "Implement CLI diagnostic pre-flight subcommand"
+          },
+          "properties": {
+            "priority": "medium",
+            "why": "Provides quick terminal access to audit engine without requiring interactive chat session.",
+            "what": "Add scripts/investigate.py CLI driver accepting mode and strategy flags.",
+            "endpoint": "python3 -m surgical_investigation --target . --mode investigator",
+            "interactiveControl": "Terminal progress bar with interactive strategy selection menu",
+            "effort": "2 days",
+            "source": "Agent CLI Architecture Standards [Tier 2]"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "SKILL.md",
+                  "uriBaseId": "PROJECTROOT"
+                },
+                "region": {
+                  "startLine": 1,
+                  "startColumn": 1
+                }
+              },
+              "message": {
+                "text": "Skill root definition"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "PRACTICE-REVIEW",
+          "ruleIndex": 2,
+          "level": "note",
+          "message": {
+            "text": "Multi-format report templates fully implemented across HTML, JSON, MD, and SARIF"
+          },
+          "properties": {
+            "priority": "high",
+            "why": "Ensures skill delivers on multi-format promise without template gaps.",
+            "what": "Keep report templates synchronized across releases.",
+            "effort": "Ongoing",
+            "source": "SKILL.md Step 7.5 [Tier 1]"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "templates/",
+                  "uriBaseId": "PROJECTROOT"
+                },
+                "region": {
+                  "startLine": 1,
+                  "startColumn": 1
+                }
+              },
+              "message": {
+                "text": "Templates directory"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

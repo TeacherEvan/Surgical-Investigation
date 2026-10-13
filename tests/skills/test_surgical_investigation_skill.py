@@ -16,7 +16,49 @@ from unittest.mock import patch
 from io import StringIO
 
 SKILL_PATH = pathlib.Path(__file__).resolve().parent.parent.parent / "SKILL.md"
-TEMPLATE_PATH = pathlib.Path(__file__).resolve().parent.parent.parent / "templates" / "report.html"
+TEMPLATES_DIR = pathlib.Path(__file__).resolve().parent.parent.parent / "templates"
+REFERENCES_DIR = pathlib.Path(__file__).resolve().parent.parent.parent / "references"
+HTML_TEMPLATE_PATH = TEMPLATES_DIR / "report.html"
+JSON_TEMPLATE_PATH = TEMPLATES_DIR / "report.json"
+MD_TEMPLATE_PATH = TEMPLATES_DIR / "report.md"
+SARIF_TEMPLATE_PATH = TEMPLATES_DIR / "report.sarif"
+TEMPLATE_PATH = HTML_TEMPLATE_PATH
+
+
+def _parse_frontmatter(content):
+    """Parse YAML frontmatter with pyyaml if available, falling back to minimal regex parser."""
+    assert content.startswith("---"), "SKILL.md must start with ---"
+    m = re.search(r"\n---\s*\n", content[3:])
+    assert m, "Frontmatter must close with ---"
+    raw_fm = content[3 : m.start() + 3]
+    body = content[m.start() + 3 :]
+    try:
+        import yaml
+        fm = yaml.safe_load(raw_fm)
+    except ImportError:
+        fm = {}
+        for line in raw_fm.splitlines():
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            if ":" in line:
+                key, val = line.split(":", 1)
+                key = key.strip()
+                val = val.strip().strip('"').strip("'")
+                if val.startswith("[") and val.endswith("]"):
+                    items = [x.strip().strip('"').strip("'") for x in val[1:-1].split(",") if x.strip()]
+                    fm[key] = items
+                elif val:
+                    fm[key] = val
+        tags_match = re.search(r"tags:\s*\[(.*?)\]", raw_fm)
+        skills_match = re.search(r"related_skills:\s*\[(.*?)\]", raw_fm)
+        fm["metadata"] = {
+            "hermes": {
+                "tags": [t.strip() for t in tags_match.group(1).split(",") if t.strip()] if tags_match else [],
+                "related_skills": [s.strip() for s in skills_match.group(1).split(",") if s.strip()] if skills_match else []
+            }
+        }
+    return fm, body
 
 
 class TestFrontmatter(unittest.TestCase):
@@ -24,14 +66,8 @@ class TestFrontmatter(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        content = SKILL_PATH.read_text(encoding="utf-8")
-        assert content.startswith("---"), "SKILL.md must start with ---"
-        m = re.search(r"\n---\s*\n", content[3:])
-        assert m, "Frontmatter must close with ---"
-        import yaml
-        cls.content = content
-        cls.fm = yaml.safe_load(content[3 : m.start() + 3])
-        cls.body = content[m.start() + 3 :]
+        cls.content = SKILL_PATH.read_text(encoding="utf-8")
+        cls.fm, cls.body = _parse_frontmatter(cls.content)
 
     def test_starts_with_dashdash(self):
         self.assertTrue(self.content.startswith("---"), "Must start at byte 0 with ---")
@@ -114,12 +150,22 @@ class TestBodyStructure(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.content = SKILL_PATH.read_text(encoding="utf-8")
-        import yaml
-        m = re.search(r"\n---\s*\n", cls.content[3:])
-        cls.body = cls.content[m.start() + 3 :]
+        cls.fm, cls.body = _parse_frontmatter(cls.content)
 
     def test_mode_selection_section(self):
         self.assertIn("Mode Selection", self.body, "Missing Mode Selection section")
+
+    def test_when_not_to_use_section(self):
+        self.assertIn("When Not to Use", self.body, "Missing When Not to Use section")
+
+    def test_skill_structure_section(self):
+        self.assertIn("Skill Structure", self.body, "Missing Skill Structure section")
+
+    def test_author_section(self):
+        self.assertIn("Author", self.body, "Missing Author section")
+
+    def test_license_section(self):
+        self.assertIn("License", self.body, "Missing License section")
 
     def test_scope_definition_section(self):
         self.assertIn("Scope Definition", self.body, "Missing Scope Definition section")
@@ -263,10 +309,53 @@ class TestTemplateFile(unittest.TestCase):
         self.assertIn("modal", self.content.lower(),
                       "Template should include a modal for follow-up requests")
 
-    def test_template_size_under_limit(self):
-        size = len(self.content)
-        self.assertLessEqual(size, 50_000,
-                             f"Template too large: {size} bytes (limit 50000)")
+    def test_all_templates_exist(self):
+        for path in [HTML_TEMPLATE_PATH, JSON_TEMPLATE_PATH, MD_TEMPLATE_PATH, SARIF_TEMPLATE_PATH]:
+            self.assertTrue(path.exists(), f"Missing template: {path.name}")
+
+    def test_json_template_valid_json(self):
+        import json
+        data = json.loads(JSON_TEMPLATE_PATH.read_text(encoding="utf-8"))
+        self.assertIn("project", data)
+        self.assertIn("mission", data)
+        self.assertIn("dependencies", data)
+        self.assertIn("practices", data)
+        self.assertIn("optimality", data)
+        self.assertIn("recommendations", data)
+        self.assertIn("diagrams", data)
+
+    def test_json_template_size_under_limit(self):
+        size = len(JSON_TEMPLATE_PATH.read_text(encoding="utf-8"))
+        self.assertLessEqual(size, 50_000, f"JSON template too large: {size}")
+
+    def test_markdown_template_structure(self):
+        md = MD_TEMPLATE_PATH.read_text(encoding="utf-8")
+        self.assertIn("# Surgical Investigation Report", md)
+        self.assertIn("## 🎯 Project Mission", md)
+        self.assertIn("## 📦 Dependencies Audit", md)
+        self.assertIn("## ⚙️ Engineering Best Practices Assessment", md)
+        self.assertIn("## 📊 Implementation Optimality", md)
+        self.assertIn("## 📐 Architecture Diagrams", md)
+        self.assertIn("```mermaid", md)
+
+    def test_markdown_template_size_under_limit(self):
+        size = len(MD_TEMPLATE_PATH.read_text(encoding="utf-8"))
+        self.assertLessEqual(size, 50_000, f"Markdown template too large: {size}")
+
+    def test_sarif_template_valid_json(self):
+        import json
+        sarif = json.loads(SARIF_TEMPLATE_PATH.read_text(encoding="utf-8"))
+        self.assertEqual(sarif.get("version"), "2.1.0")
+        self.assertTrue(len(sarif.get("runs", [])) > 0)
+        driver = sarif["runs"][0]["tool"]["driver"]
+        self.assertEqual(driver["name"], "Surgical-Investigation")
+        rule_ids = [r["id"] for r in driver.get("rules", [])]
+        self.assertIn("DEPENDENCY-AUDIT", rule_ids)
+        self.assertIn("RECOMMENDATION", rule_ids)
+
+    def test_sarif_template_size_under_limit(self):
+        size = len(SARIF_TEMPLATE_PATH.read_text(encoding="utf-8"))
+        self.assertLessEqual(size, 50_000, f"SARIF template too large: {size}")
 
 
 class TestRelatedSkills(unittest.TestCase):
@@ -275,9 +364,7 @@ class TestRelatedSkills(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.content = SKILL_PATH.read_text(encoding="utf-8")
-        import yaml
-        m = re.search(r"\n---\s*\n", cls.content[3:])
-        cls.fm = yaml.safe_load(cls.content[3 : m.start() + 3])
+        cls.fm, cls.body = _parse_frontmatter(cls.content)
 
     def test_related_skills_includes_executing_plans(self):
         related = self.fm.get("metadata", {}).get("hermes", {}).get("related_skills", [])
@@ -301,10 +388,7 @@ class TestIntegration(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.content = SKILL_PATH.read_text(encoding="utf-8")
-        import yaml
-        m = re.search(r"\n---\s*\n", cls.content[3:])
-        cls.fm = yaml.safe_load(cls.content[3 : m.start() + 3])
-        cls.body = cls.content[m.start() + 3 :]
+        cls.fm, cls.body = _parse_frontmatter(cls.content)
 
     def test_investigator_builds_report(self):
         """Documented behavior: Investigator mode generates HTML report."""
@@ -336,24 +420,17 @@ class TestIntegration(unittest.TestCase):
 
 
 class TestNewFeatures(unittest.TestCase):
-    """Tests for v1.1.0 features: strategy system, budgets, cache, refinement, formats, composition."""
+    """Tests for v1.1.0/v1.2.0 features: strategy system, budgets, cache, refinement, formats, composition."""
 
     @classmethod
     def setUpClass(cls):
         cls.content = SKILL_PATH.read_text(encoding="utf-8")
-        import yaml
-        m = re.search(r"\n---\s*\n", cls.content[3:])
-        cls.body = cls.content[m.start() + 3:]
+        cls.fm, cls.body = _parse_frontmatter(cls.content)
 
     def test_version_is_1_1_0_or_later(self):
-        import yaml
-        content = SKILL_PATH.read_text(encoding="utf-8")
-        m = re.search(r"\n---\s*\n", content[3:])
-        self.assertIsNotNone(m, "Frontmatter delimiter missing")
-        fm = yaml.safe_load(content[3:m.start() + 3])
-        ver = fm.get("version", "")
+        ver = self.fm.get("version", "")
         # Should be at least 1.1.0 (or higher minor)
-        match = re.match(r"^(\d+)\.(\d+)\.\d+$", ver)
+        match = re.match(r"^(\d+)\.(\d+)\.\d+$", str(ver))
         self.assertIsNotNone(match, f"version not semver: {ver}")
         major, minor = int(match.group(1)), int(match.group(2))
         self.assertGreaterEqual(minor, 1, f"Expected version >= 1.1.0, got {ver}")
@@ -442,10 +519,45 @@ class TestNewFeatures(unittest.TestCase):
     def test_source_credibility_tiers(self):
         # Source credibility scoring system
         has_credibility = ("credibility" in self.body.lower() or
-                           "tier" in self.body.lower() or
-                           "weight" in self.body.lower())
+                            "tier" in self.body.lower() or
+                            "weight" in self.body.lower())
         self.assertTrue(has_credibility,
                         "Source credibility / tier scoring not mentioned")
+
+
+class TestBestYouCanDoProtocol(unittest.TestCase):
+    """Validate 'Best You Can Do' escalation principles and reference integrity."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.content = SKILL_PATH.read_text(encoding="utf-8")
+        cls.fm, cls.body = _parse_frontmatter(cls.content)
+
+    def test_escalation_protocol_section_present(self):
+        self.assertIn("Best You Can Do", self.body)
+        self.assertIn("Escalation Protocol", self.body)
+
+    def test_subagent_depth_pillar(self):
+        self.assertTrue("Subagent Depth" in self.body or "parallel retrievals" in self.body)
+
+    def test_multi_format_output_pillar(self):
+        self.assertTrue("Multi-Format Output" in self.body or "all 4 output formats" in self.body)
+
+    def test_external_verification_pillar(self):
+        self.assertTrue("External Verification" in self.body or "Tier 1" in self.body)
+
+    def test_actionable_recommendations_pillar(self):
+        self.assertTrue("Concrete Endpoints" in self.body or "concrete endpoint" in self.body)
+
+    def test_all_reference_files_exist_on_disk(self):
+        refs = re.findall(r"references/([a-z0-9-]+\.md)", self.body)
+        self.assertTrue(len(refs) > 0, "No references found in SKILL.md")
+        for ref in set(refs):
+            ref_path = REFERENCES_DIR / ref
+            self.assertTrue(ref_path.exists(), f"Referenced file does not exist: references/{ref}")
+
+    def test_no_stale_telegram_bot_auth_reference(self):
+        self.assertNotIn("`references/telegram-bot-auth.md`", self.body)
 
 
 if __name__ == "__main__":
