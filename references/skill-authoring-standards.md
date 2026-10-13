@@ -75,6 +75,32 @@ Every skill should have:
 - Tests for template presence
 - Tests for key procedure steps
 
+## Mirrored Installs — the Repo Is the Source of Truth
+
+A skill installed into an agent (Hermes, OpenCode, Gemini CLI, Antigravity) is a
+**copy**. Copies drift, and the drift is invisible: after v1.2.0 was pushed, the
+Hermes install looked correct at the top level but its `docs/` tree was stale, and
+three other installs still ran v1.1.0 with only 1 of 4 templates. Every check
+passed, because nothing compared bytes.
+
+Rules:
+
+- **Edit the repo, never an install.** A direct install edit is either clobbered by
+  the next sync or never reaches the repo at all — and the next session inherits
+  the confusion.
+- **Give the repo a `scripts/sync-skill.sh`** with `check` / `sync` / `verify`
+  modes (rsync `--itemize-changes`). `check` and `verify` must be read-only and
+  exit non-zero when stale, so drift fails loudly instead of quietly.
+- **Mirror only skill assets** — `SKILL.md`, `README.md`, `templates/`,
+  `references/`, `docs/`. Exclude repo-only dirs (`.github/`, `tests/`,
+  `scripts/`) and any `_archive*` path: past investigation *outputs* are not skill
+  assets and must not propagate into every install.
+- **Verify with a second mechanism** (`diff -r`, `cmp`, `md5sum`) rather than the
+  sync script's own report. A tool's self-report is not evidence.
+- **Back up the installs before the first sync** — `tar czf` every target, because
+  the first mirror run both overwrites stale files and prunes the ones no longer
+  in the repo.
+
 ## Validation (Pre-Commit)
 
 Before pushing a skill:
@@ -85,3 +111,4 @@ Before pushing a skill:
 - [ ] Template file exists (if referenced)
 - [ ] Tests pass (`pytest`)
 - [ ] File sizes within limits
+- [ ] Every install re-synced (`scripts/sync-skill.sh sync && scripts/sync-skill.sh verify`)
