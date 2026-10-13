@@ -140,6 +140,21 @@ Mirrored: `SKILL.md`, `README.md`, `templates/`, `references/`, `docs/`.
 Never mirrored or deleted: `.git/`, `.github/`, `tests/`, `scripts/`, and anything
 matching `_archive*` — past investigation outputs stay put and never propagate.
 
+### Verify before pushing
+
+`check` and `verify` use different mechanisms on purpose (rsync dry-run vs
+`diff -r`/`cmp`), so a passing `verify` is evidence rather than a tool agreeing
+with itself. Neither one writes anything.
+
+CI lives in `.github/workflows/skill-ci.yml`. Replay it locally instead of guessing
+whether it will pass — this reads the workflow itself, so there is no second copy
+of the checks to drift:
+
+```bash
+python3 -m venv .venv && .venv/bin/pip install pytest pyyaml
+.venv/bin/python scripts/run-ci-locally.py   # exit 0 = every step would pass
+```
+
 ## How It Works
 
 1. **Mode selection** — Skill prompts you: Investigator or Project-Manager?

@@ -69,6 +69,16 @@ jobs:
           test -f references/search-strategy-system.md || (echo 'Missing search-strategy-system.md'; exit 1)
           echo 'References valid'
 
+      - name: Check scripts
+        run: |
+          for f in scripts/*.sh; do
+            bash -n "$f" || (echo "Syntax error in $f"; exit 1)
+            test -x "$f" || (echo "$f is not executable"; exit 1)
+            echo "Script OK: $f"
+          done
+          python -c "import ast, pathlib; [ast.parse(p.read_text()) for p in pathlib.Path('scripts').glob('*.py')]" || (echo 'Python script syntax error'; exit 1)
+          echo 'Scripts valid'
+
       - name: Check tests
         run: |
           test -d tests || (echo 'Missing tests/ directory'; exit 1)
@@ -84,7 +94,7 @@ jobs:
           python -c "
           import os
           for root, dirs, files in os.walk('.'):
-              dirs[:] = [d for d in dirs if d not in ['.git', '.github', '__pycache__', '.cache']]
+              dirs[:] = [d for d in dirs if d not in ['.git', '.github', '__pycache__', '.cache', '.venv', 'node_modules']]
               for f in files:
                   if f.endswith('.py') or f.endswith('.md'):
                       path = os.path.join(root, f)

@@ -19,6 +19,7 @@ env/
 Thumbs.db
 
 # Build/test artifacts
+.pytest_cache/
 dist/
 build/
 *.egg-info/
