@@ -5,7 +5,7 @@
 Every Hermes skill must have these components:
 
 | Component | Required | Description |
-|-----------|----------|-------------|
+| ----------- | ---------- | ------------- |
 | `SKILL.md` | ✅ Yes | Skill definition with YAML frontmatter + Markdown body |
 | `name` | ✅ Yes | Skill identifier (lowercase, hyphens, max 64 chars) |
 | `description` | ✅ Yes | Strict ≤60 chars, starts with `"Use when ..."`, ends with a period (first 57 chars = self-contained trigger) |
@@ -36,7 +36,7 @@ metadata:
 ## Body Structure (Standard Sections)
 
 | Section | Purpose |
-|---------|---------|
+| --------- | --------- |
 | `# Skill Name` | Title |
 | `## Overview` | What the skill does (1-3 sentences) |
 | `## When to Use` | Trigger conditions (bulleted) |
@@ -55,6 +55,7 @@ metadata:
 ## Reference Files (Optional)
 
 References in `references/` support the skill's procedures. They should be:
+
 - Named clearly (`search-strategy-system.md`, `feature-recommendation-format.md`)
 - Focused on a single topic
 - Referenced by the skill's steps
@@ -62,6 +63,7 @@ References in `references/` support the skill's procedures. They should be:
 ## Template Files (Optional)
 
 Templates in `templates/` generate reports or artifacts. They should:
+
 - Be standalone (no external dependencies unless documented)
 - Include clear variable placeholders
 - Be tested by the skill's tests
@@ -69,6 +71,7 @@ Templates in `templates/` generate reports or artifacts. They should:
 ## Test Requirements
 
 Every skill should have:
+
 - `tests/skills/test_<skill>_skill.py`
 - Tests for frontmatter validity
 - Tests for body structure
@@ -104,6 +107,7 @@ Rules:
 ## Validation (Pre-Commit)
 
 Before pushing a skill:
+
 - [ ] `SKILL.md` frontmatter loads as YAML
 - [ ] `description` starts with `"Use when"`, is ≤60 chars, and ends with a period
 - [ ] `version` is valid SemVer
