@@ -8,7 +8,7 @@ Every Hermes skill must have these components:
 |-----------|----------|-------------|
 | `SKILL.md` | ✅ Yes | Skill definition with YAML frontmatter + Markdown body |
 | `name` | ✅ Yes | Skill identifier (lowercase, hyphens, max 64 chars) |
-| `description` | ✅ Yes | Must start with `"Use when ..."` (first 57 chars self-contained trigger) |
+| `description` | ✅ Yes | Strict ≤60 chars, starts with `"Use when ..."`, ends with a period (first 57 chars = self-contained trigger) |
 | `version` | ✅ Yes | SemVer format (e.g., `1.1.0`) |
 | `author` | ✅ Yes | Creator attribution |
 | `license` | ✅ Yes | MIT or other open license |
@@ -105,7 +105,7 @@ Rules:
 
 Before pushing a skill:
 - [ ] `SKILL.md` frontmatter loads as YAML
-- [ ] `description` starts with `"Use when"`
+- [ ] `description` starts with `"Use when"`, is ≤60 chars, and ends with a period
 - [ ] `version` is valid SemVer
 - [ ] `tags` and `related_skills` are non-empty arrays
 - [ ] Template file exists (if referenced)
