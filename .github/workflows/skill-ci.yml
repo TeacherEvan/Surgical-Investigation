@@ -1,6 +1,6 @@
 name: Skill Validation
 
-on:
+"on":
   push:
     branches: [main, master]
   pull_request:
@@ -17,6 +17,11 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+
+      # Runs before `pip install` on purpose: it is dependency-free, so a
+      # missing pyyaml can never mask a conformance failure.
+      - name: Conformance gate (family standard)
+        run: python3 scripts/conform.py
 
       - name: Install dependencies
         run: |
