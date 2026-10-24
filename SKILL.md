@@ -1,14 +1,16 @@
 ---
 name: surgical-investigation
 description: "Use when investigating: strategy search, multi-output."
-version: 1.3.0
+version: 1.3.1
 author: Fenrie (Lea's AI wolf), Hermes Agent
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
   hermes:
     tags: [investigation, project-analysis, report-generation, mermaid, html-report, search-strategy, multi-format-output, skill-composition]
-    related_skills: [superpowers:executing-plans, superpowers:verification-before-completion, superpowers:systematic-debugging, surgical-orchestration, surgical-implementation, surgical-hermesdothealth, code-review-and-quality, systematic-debugging, parallel-cli, competitor-news-monitor, grounded-citations]
+    # Bare, portable names only. Plugin-qualified entries (`superpowers:x`) resolve
+    # in Hermes but not in OpenCode/Antigravity/Cursor, where this skill is also installed.
+    related_skills: [surgical-orchestration, surgical-implementation, surgical-hermesdothealth, surgical-audit, systematic-debugging, grounded-citations]
 ---
 
 # Surgical-Investigation Skill

@@ -359,27 +359,36 @@ class TestTemplateFile(unittest.TestCase):
 
 
 class TestRelatedSkills(unittest.TestCase):
-    """Validate related_skills entries resolve to real skills."""
+    """related_skills must be portable: bare names that load in every install.
+
+    This skill is mirrored into Hermes, OpenCode, Antigravity and Cursor. A
+    plugin-qualified entry (`superpowers:executing-plans`) resolves in Hermes and
+    fails everywhere else, so the invariant is structural rather than a name list.
+    """
 
     @classmethod
     def setUpClass(cls):
         cls.content = SKILL_PATH.read_text(encoding="utf-8")
         cls.fm, cls.body = _parse_frontmatter(cls.content)
+        cls.related = cls.fm.get("metadata", {}).get("hermes", {}).get("related_skills", [])
 
-    def test_related_skills_includes_executing_plans(self):
-        related = self.fm.get("metadata", {}).get("hermes", {}).get("related_skills", [])
-        self.assertIn("superpowers:executing-plans", related,
-                      "Must reference superpowers:executing-plans")
+    def test_related_skills_is_a_non_empty_list(self):
+        self.assertIsInstance(self.related, list)
+        self.assertTrue(self.related, "related_skills must not be empty")
 
-    def test_related_skills_includes_verification(self):
-        related = self.fm.get("metadata", {}).get("hermes", {}).get("related_skills", [])
-        self.assertIn("superpowers:verification-before-completion", related,
-                      "Must reference superpowers:verification-before-completion")
+    def test_no_plugin_qualified_names(self):
+        for name in self.related:
+            self.assertNotIn(":", name,
+                             f"plugin-qualified name is not portable: {name!r}")
 
-    def test_related_skills_includes_debugging(self):
-        related = self.fm.get("metadata", {}).get("hermes", {}).get("related_skills", [])
-        self.assertIn("superpowers:systematic-debugging", related,
-                      "Must reference superpowers:systematic-debugging")
+    def test_names_are_lowercase_hyphenated(self):
+        for name in self.related:
+            self.assertRegex(name, r"^[a-z0-9-]+$",
+                             f"not a portable skill id: {name!r}")
+
+    def test_includes_the_family_predecessor(self):
+        self.assertIn("surgical-implementation", self.related,
+                      "Investigation feeds surgical-implementation; the link must exist")
 
 
 class TestIntegration(unittest.TestCase):

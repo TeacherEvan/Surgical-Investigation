@@ -87,8 +87,39 @@ else
     ".gemini/skills/$SKILL_NAME"                        # Gemini CLI
     ".gemini/surgical/$SKILL_NAME"                      # Gemini CLI (bundle)
     ".gemini/antigravity-cli/skills/$SKILL_NAME"        # Antigravity CLI
+    ".cursor/skills/$SKILL_NAME"                        # Cursor
   )
 fi
+
+# --- de-duplicate by real path -------------------------------------------------
+# `~/.config/opencode/skills` is commonly a symlink to `~/.hermes/skills`. Without
+# this, the same directory is synced twice (and a second --delete pass runs against
+# a tree the first pass just wrote). Cursor has the same shape on some installs.
+resolve_target() {
+  local rel="$1" parent base
+  parent="$(dirname "$HOME/$rel")"
+  base="$(basename "$rel")"
+  if [ -d "$parent" ]; then
+    printf '%s/%s\n' "$(cd -P "$parent" && pwd)" "$base"
+  else
+    printf '%s/%s\n' "$parent" "$base"
+  fi
+}
+
+UNIQUE=()
+for rel in "${TARGETS[@]}"; do
+  real="$(resolve_target "$rel")"
+  skip=0
+  for seen in "${UNIQUE[@]}"; do
+    [ "$(resolve_target "$seen")" = "$real" ] && skip=1 && break
+  done
+  if [ "$skip" -eq 0 ]; then
+    UNIQUE+=("$rel")
+  else
+    echo "[DEDUPE] $rel -> same directory as an earlier target" >&2
+  fi
+done
+TARGETS=("${UNIQUE[@]}")
 
 # --- what gets mirrored -------------------------------------------------------
 INCLUDE=(SKILL.md README.md templates references docs)
