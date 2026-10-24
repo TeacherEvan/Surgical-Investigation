@@ -593,6 +593,7 @@ surgical-investigation/
 - `references/sarif-schema.md` — SARIF 2.1.0 required fields, mapping to investigation output, compatibility, common mistakes (Step 7.5 JSON format)
 - `references/skill-authoring-standards.md` — Hermes skill file requirements, frontmatter rules, body structure, size limits, reference/template file rules, test requirements
 - `references/comparative-analysis-pattern.md` — Comparative decision analysis across two or more options (systems, countries, platforms, pathways): Step 1 scope additions, comparison-matrix format, and recommendation structure for comparative outputs
+- `references/due-diligence-benchmarks.md` — Regulatory-requirement and disclosure benchmarks for non-codebase (OSINT/company/person) investigations
 
 ---
 
