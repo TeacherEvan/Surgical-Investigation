@@ -1,0 +1,173 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/TeacherEvan/Surgical-Investigation/templates/report.schema.json",
+  "title": "Surgical Investigation Report",
+  "description": "Machine-readable findings contract for surgical-investigation. JSON Schema 2020-12; validate with ajv or python-jsonschema before a report feeds CI.",
+  "type": "object",
+  "required": [
+    "project",
+    "timestamp",
+    "mode",
+    "strategy",
+    "mission",
+    "dependencies",
+    "practices",
+    "optimality",
+    "agentFiles",
+    "externalResearch",
+    "recommendations",
+    "diagrams"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "project": { "type": "string", "minLength": 1 },
+    "timestamp": { "type": "string", "minLength": 1 },
+    "mode": { "enum": ["investigator", "project-manager"] },
+    "strategy": {
+      "type": "string",
+      "description": "One strategy or a '+' combination, e.g. 'codebase-first+error-driven'."
+    },
+    "mission": {
+      "type": "object",
+      "required": ["stated", "actual", "gap"],
+      "additionalProperties": false,
+      "properties": {
+        "stated": { "type": "string" },
+        "actual": { "type": "string" },
+        "gap": { "type": "string" }
+      }
+    },
+    "dependencies": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "version", "latest", "status", "tier"],
+        "additionalProperties": false,
+        "properties": {
+          "name": { "type": "string" },
+          "version": { "type": "string" },
+          "latest": { "type": "string" },
+          "status": { "enum": ["good", "warn", "bad"] },
+          "tier": { "type": "integer", "minimum": 1, "maximum": 5 },
+          "notes": { "type": "string" },
+          "cve": { "type": "string" },
+          "cvss_v4_vector": { "type": "string" },
+          "epss": { "type": "number", "minimum": 0, "maximum": 1 },
+          "kev": { "type": "boolean" },
+          "reachable": { "type": "boolean" }
+        }
+      }
+    },
+    "practices": {
+      "type": "object",
+      "required": [
+        "codeQuality",
+        "architecture",
+        "testing",
+        "security",
+        "performance",
+        "documentation"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "codeQuality": { "$ref": "#/$defs/findings" },
+        "architecture": { "$ref": "#/$defs/findings" },
+        "testing": { "$ref": "#/$defs/findings" },
+        "security": { "$ref": "#/$defs/findings" },
+        "performance": { "$ref": "#/$defs/findings" },
+        "documentation": { "$ref": "#/$defs/findings" }
+      }
+    },
+    "optimality": {
+      "type": "object",
+      "required": ["algorithm", "complexity", "resources", "alternatives", "scalability"],
+      "additionalProperties": false,
+      "properties": {
+        "algorithm": { "type": "string" },
+        "complexity": { "type": "string" },
+        "resources": { "type": "string" },
+        "alternatives": { "type": "array", "items": { "type": "string" } },
+        "scalability": { "type": "string" }
+      }
+    },
+    "agentFiles": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["type", "path", "status"],
+        "additionalProperties": false,
+        "properties": {
+          "type": { "enum": ["skills", "memory", "config", "docs", "kanban", "tools", "agents-md"] },
+          "path": { "type": "string" },
+          "status": { "enum": ["current", "stale", "missing"] },
+          "notes": { "type": "string" }
+        }
+      }
+    },
+    "externalResearch": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["strategy", "query", "source", "tier", "finding"],
+        "additionalProperties": false,
+        "properties": {
+          "strategy": { "type": "string" },
+          "query": { "type": "string" },
+          "source": { "type": "string" },
+          "tier": { "type": "integer", "minimum": 1, "maximum": 5 },
+          "finding": { "type": "string" },
+          "url": { "type": "string" },
+          "retrieved_at": { "type": "string" },
+          "content_sha256": { "type": "string" }
+        }
+      }
+    },
+    "recommendations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["priority", "title", "why", "what", "effort"],
+        "additionalProperties": false,
+        "properties": {
+          "priority": { "enum": ["high", "medium", "low"] },
+          "title": { "type": "string" },
+          "why": { "type": "string" },
+          "what": { "type": "string" },
+          "endpoint": { "type": "string" },
+          "interactiveControl": { "type": "string" },
+          "effort": { "type": "string" },
+          "source": { "type": "string" },
+          "acceptanceCriteria": { "type": "array", "items": { "type": "string" } },
+          "successMetric": { "type": "string" },
+          "adr": { "type": "string", "description": "Relative path to docs/adr/NNNN-*.md" }
+        }
+      }
+    },
+    "diagrams": {
+      "type": "object",
+      "required": ["backend", "frontend", "research", "entire"],
+      "additionalProperties": false,
+      "properties": {
+        "backend": { "type": "string" },
+        "frontend": { "type": "string" },
+        "research": { "type": "string" },
+        "entire": { "type": "string" }
+      }
+    }
+  },
+  "$defs": {
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["status", "finding", "source"],
+        "additionalProperties": false,
+        "properties": {
+          "status": { "enum": ["good", "warn", "bad"] },
+          "finding": { "type": "string" },
+          "source": { "type": "string" }
+        }
+      }
+    }
+  }
+}

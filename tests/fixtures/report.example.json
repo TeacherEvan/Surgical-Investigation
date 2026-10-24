@@ -1,0 +1,93 @@
+{
+  "project": "example-service",
+  "timestamp": "2026-10-24T21:40:00Z",
+  "mode": "investigator",
+  "strategy": "codebase-first+cve-driven",
+  "mission": {
+    "stated": "REST API for widget ordering.",
+    "actual": "Express app with three routes and no endpoint tests.",
+    "gap": "README claims a REST API; no OpenAPI document and no route-level tests exist."
+  },
+  "dependencies": [
+    {
+      "name": "express",
+      "version": "4.18.2",
+      "latest": "5.1.0",
+      "status": "warn",
+      "tier": 1,
+      "notes": "Major version behind; 5.x is the current line.",
+      "cve": "CVE-2024-00000",
+      "cvss_v4_vector": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N",
+      "epss": 0.12,
+      "kev": false,
+      "reachable": true
+    }
+  ],
+  "practices": {
+    "codeQuality": [
+      { "status": "good", "finding": "Consistent module layout.", "source": "[Tier 2: repo CI config]" }
+    ],
+    "architecture": [
+      { "status": "warn", "finding": "Route handlers talk to the DB directly; no repository layer.", "source": "[Tier 3: internal review]" }
+    ],
+    "testing": [
+      { "status": "bad", "finding": "No tests for any route.", "source": "[Tier 2: test file inventory]" }
+    ],
+    "security": [
+      { "status": "warn", "finding": "No input validation on POST /orders.", "source": "[Tier 1: OWASP ASVS 5.0 V5]" }
+    ],
+    "performance": [
+      { "status": "good", "finding": "Queries are indexed; no N+1 observed.", "source": "[Tier 3: manual trace]" }
+    ],
+    "documentation": [
+      { "status": "bad", "finding": "No AGENTS.md; README setup steps fail on Node 22.", "source": "[Tier 2: local run]" }
+    ]
+  },
+  "optimality": {
+    "algorithm": "O(n) scan per request is acceptable at current volume.",
+    "complexity": "No quadratic loops found.",
+    "resources": "Memory steady under 200 rps.",
+    "alternatives": ["Use a validation middleware rather than hand-rolled checks."],
+    "scalability": "Holds to ~4x current load; DB pool is the limit."
+  },
+  "agentFiles": [
+    { "type": "agents-md", "path": "AGENTS.md", "status": "missing", "notes": "Build/test commands only exist in CI YAML." },
+    { "type": "docs", "path": "README.md", "status": "stale", "notes": "Setup section targets Node 18." }
+  ],
+  "externalResearch": [
+    {
+      "strategy": "cve-driven",
+      "query": "express@4.18.2 osv",
+      "source": "OSV API",
+      "tier": 1,
+      "finding": "One moderate advisory affecting 4.x.",
+      "url": "https://api.osv.dev/v1/query",
+      "retrieved_at": "2026-10-24T21:35:00Z",
+      "content_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "recommendations": [
+    {
+      "priority": "high",
+      "title": "Add schema validation to POST /orders",
+      "why": "Unvalidated input is the only reachable attack surface in this service.",
+      "what": "Introduce zod validation middleware on the route and reject with 422 on failure.",
+      "endpoint": "POST /orders",
+      "interactiveControl": "n/a",
+      "effort": "1 day",
+      "source": "[Tier 1: OWASP ASVS 5.0 V5.1]",
+      "acceptanceCriteria": [
+        "POST /orders with a missing field returns 422",
+        "Valid payload still returns 201"
+      ],
+      "successMetric": "0 unvalidated request bodies reach the handler",
+      "adr": "docs/adr/0001-order-validation.md"
+    }
+  ],
+  "diagrams": {
+    "backend": "docs/backend-architecture.mmd",
+    "frontend": "docs/frontend-architecture.mmd",
+    "research": "docs/research-findings.mmd",
+    "entire": "docs/entire-project.mmd"
+  }
+}

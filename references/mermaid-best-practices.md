@@ -2,6 +2,47 @@
 
 Used when generating diagrams for surgical-investigation reports (Step 8a, HTML output).
 
+## Version & Mandatory Attributes (Mermaid 11)
+
+The template pins **`mermaid@11`** (v11.0.0, Aug 2024). v10 syntax is a subset — do not copy v10-era
+examples that use removed or renamed directives.
+
+**Every diagram must open with both accessibility directives:**
+
+```
+flowchart TB
+    accTitle: Backend request path
+    accDescr: Browser to API to database, with a cache between API and database.
+    ...
+```
+
+Mermaid renders `accTitle`/`accDescr` as `<title>` / `<desc>` plus `aria-labelledby` /
+`aria-describedby` on the SVG. A diagram without them is an accessibility defect in the report
+itself, not a cosmetic omission. `accDescr { … }` supports multi-line descriptions.
+
+**Architecture diagrams use the dedicated type** (`architecture-beta`, v11.1+):
+
+```
+architecture-beta
+    accTitle: Service topology
+    accDescr: Three services behind one gateway, sharing a queue.
+
+    group api(cloud)[API]
+    service gateway(server)[Gateway] in api
+    service orders(server)[Orders] in api
+    service db(database)[Postgres] in api
+
+    gateway:R --> L:orders
+    orders:R --> L:db
+```
+
+Use `architecture-beta` for `backend-architecture.mmd` (cloud/CI-CD topology: `group`, `service`,
+`edge`, `junction`); keep `flowchart` for process flows and `gantt` for timelines.
+
+**Dense graphs:** switch to the ELK layout (`@mermaid-js/layout-elk`) above ~25 nodes — the default
+dagre layout produces avoidable edge crossings. State in the report when a diagram was split
+because of the node limit.
+
 ## Size Limits
 
 - Keep diagrams under **50 nodes** — larger diagrams become unreadable in HTML

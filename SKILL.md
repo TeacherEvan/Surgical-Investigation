@@ -1,7 +1,7 @@
 ---
 name: surgical-investigation
 description: "Use when investigating: strategy search, multi-output."
-version: 1.3.1
+version: 1.4.0
 author: Fenrie (Lea's AI wolf), Hermes Agent
 license: MIT
 platforms: [linux, macos, windows]
@@ -40,6 +40,8 @@ Comprehensive project investigation with two modes: **Investigator** (analyze ev
 - Web search capability for external sources (Reddit, docs, communities)
 - Subagent capability for parallel retrievals (optional but recommended)
 - Mermaid rendering supported in the output context (for Investigator mode reports)
+- **Standards baseline loaded** — read `references/modern-standards.md` before Step 3. It pins the current version of every standard this procedure cites (CVSS v4.0 / EPSS / KEV, CycloneDX 1.6+ / SPDX 3.0.1, SARIF 2.1.0, Mermaid 11, WCAG 2.2, MCP 2025-11-25, AGENTS.md). Findings that name a standard must name its version.
+- **Optional local tooling** (use if present, note absence rather than guessing): `osv-scanner`, `syft`, `gitleaks`, `semgrep`, `ast-grep`, `scorecard`.
 
 ---
 
@@ -156,8 +158,10 @@ Surface tier in findings: "Finding: X [Tier 1: ESLint docs]"
 **Cache external research per project to avoid re-searching.**
 - Cache location: `docs/external-research/.cache/<strategy>/<query-hash>.json`
 - Cache TTL: 7 days for Tier 1/2, 3 days for Tier 3, 1 day for Tier 4/5
+- **Revalidate, do not blind-refetch.** On expiry, send a conditional request (`If-None-Match` with the stored `ETag`, or `If-Modified-Since`) per RFC 9111; a `304` refreshes the TTL without re-downloading.
 - On new investigation: check cache first, only refresh stale entries
-- Cache key: strategy + normalized query + project fingerprint (package.json hash, etc.)
+- Cache key: `sha256(strategy + normalized query + project fingerprint)` — content-addressed, so two phrasing variants of the same query share an entry
+- Store `retrieved_at`, `etag`/`last_modified`, and a `content_sha256` alongside the payload; a later run can then prove what changed rather than re-reading everything
 
 ---
 
@@ -214,7 +218,15 @@ For each dependency, answer:
 - Still actively maintained?
 - Better alternative available?
 
-**Use subagents** to parallel-check different manifest files.
+**Modern evidence chain (do this, not a bare `npm audit`):**
+
+1. **Scan the lockfile, not the manifest.** A floating range hides the installed version; `osv-scanner -L <lockfile>` reports what actually ships. If no lockfile exists, that is itself a finding.
+2. **Attach an SBOM.** If the project has one (CycloneDX 1.6+ / SPDX 3.0.1), scan it; if not, generate one (`syft`, `osv-scanner --sbom`) and note it as missing evidence.
+3. **Rank by exploitation, not by severity.** For every CVE record: CVSS **v4.0 vector** + **EPSS** score/percentile + **KEV** membership + reachability. Order the table KEV → reachable & EPSS ≥ 0.1 → CVSS ≥ 9.0 unreachable → rest. A flat CVSS-sorted list is a failed audit.
+4. **Check reachability** where the scanner supports call analysis. "Present but unreachable" is a different finding from "reachable from an HTTP handler" — say which.
+5. **Licence + supply chain.** `osv-scanner --licenses` for copyleft conflicts; OpenSSF Scorecard for the one or two dependencies the project cannot replace.
+
+**Use subagents** to parallel-check different manifest files — one per ecosystem, each returning the same four columns so the table merges cleanly.
 
 ---
 
@@ -260,6 +272,18 @@ Evaluate against these dimensions. Label each finding as **good**, **warn**, or 
 - [ ] Complex logic explained in comments
 - [ ] API/docs reflect current state
 - [ ] Setup instructions actually work
+- [ ] `AGENTS.md` exists at the root (and per-package in a monorepo) and matches reality — see `references/modern-standards.md` §5
+
+**Interface & accessibility (any UI, dashboard, report or HTML artefact)**
+- [ ] Audited against **WCAG 2.2**, not 2.1 — cite the failing SC number
+- [ ] Target size ≥ 24×24 CSS px or the spacing exception (2.5.8, AA)
+- [ ] Keyboard focus never fully obscured by sticky chrome (2.4.11, AA)
+- [ ] `prefers-reduced-motion` **and** `prefers-contrast` / `forced-colors` handled
+- [ ] Contrast measured on the composited background, not the token's nominal value
+
+**Observability**
+- [ ] Errors surface with context (no silent swallow)
+- [ ] Logs/metrics/traces name the OpenTelemetry signal and semconv attribute where instrumentation is recommended
 
 ---
 
@@ -281,10 +305,11 @@ Reference external sources here: "Reddit thread X and Stack Overflow answer Y su
 
 Check all agent-operated resources:
 
-- **Skills** — current? correct paths? accurate descriptions?
+- **Skills** — current? correct paths? accurate descriptions? Frontmatter `version:` bumped when behaviour changed?
 - **Memory** — `~/.hermes/memories/` — accurate and not stale?
 - **Config** — config.yaml, .env, tool configs — consistent with reality?
 - **Project docs** — README, AGENTS.md, wikis — current?
+- **Agent context file** — `AGENTS.md` at root + nested per package (nearest wins); does it carry build/test commands, conventions, and security gotchas, or is it a README copy?
 - **Kanban/planning** — task state reflects reality?
 - **Local notes** — TOOLS.md, device notes — accurate?
 
@@ -293,6 +318,8 @@ Check all agent-operated resources:
 ### Step 7: External Source Investigation (Strategy-Driven)
 
 **Execute searches per the selected strategy from Step 0.5.**
+
+**Tool order — structured first, scrape last:** (1) an MCP server for the domain if one is connected; (2) a documented JSON/REST API (OSV, deps.dev, GitHub, registry APIs); (3) `web_extract` on the authoritative page; (4) `browser_exec` for JS-rendered or bot-walled pages (see the `blocked-page-recovery` skill). Check for `llms.txt` before crawling a docs site. Record which rung each finding came from — "scraped HTML" is weaker evidence than "OSV API response".
 
 | Strategy | Sources | Query Construction |
 |----------|---------|-------------------|
@@ -368,6 +395,8 @@ Quick Search runs Step 0.5 → Step 7 only, returns synthesized findings. No rep
 
 **SARIF** follows the standard SARIF 2.1.0 schema (see `references/sarif-schema.md`) — compatible with GitHub Code Scanning, VS Code, and security dashboards.
 
+**Validation before delivery:** the JSON output must validate against a pinned schema (**JSON Schema 2020-12**), not just parse. Keep `templates/report.schema.json` beside the template and validate with `ajv`/`python -m jsonschema` when the report feeds CI. SARIF stays at **2.1.0 + Errata 01** — version 2.2 is only a Committee Specification Draft (CSD01, Oct 2026), so emitting 2.2 today produces files GitHub rejects.
+
 All formats include the same underlying data; HTML adds browser interactivity, while JSON and SARIF enable automated gates.
 
 ---
@@ -381,6 +410,12 @@ Create `docs/` if it doesn't exist. Generate:
 - `docs/frontend-architecture.mmd`
 - `docs/research-findings.mmd`
 - `docs/entire-project.mmd`
+
+**Mermaid 11 requirements** (the template pins `mermaid@11`):
+- Every diagram starts with `accTitle:` **and** `accDescr:` — Mermaid renders these as `<title>`/`<desc>` with `aria-labelledby`/`aria-describedby`. A diagram without them is an accessibility defect in the report itself.
+- Use **`architecture-beta`** (v11.1+) for `backend-architecture.mmd` — `group`/`service`/`edge`/`junction` model cloud and CI/CD topology directly. Keep `flowchart` for process flows and `gantt` for timelines.
+- Switch to ELK layout (`@mermaid-js/layout-elk`) when a `flowchart` exceeds ~25 nodes; otherwise Mermaid's default dagre layout crosses edges.
+- See `references/mermaid-best-practices.md` for limits and patterns.
 
 **Reports:**
 - `docs/surgical-investigation-report.html` (always generated)
@@ -398,6 +433,8 @@ Use the templates in `templates/` (`report.html`, `report.json`, `report.md`, `r
 5. Four embedded Mermaid diagrams
 6. Findings summary
 7. **Recommendations for features the project should add** — specific, actionable, prioritized. This is where you recommend request features (new API endpoints, bulk operations, webhooks) and interactive features (real-time updates, filtering, dashboards, user controls). Not just "improve X" — "add a bulk-export endpoint that accepts a date range filter; estimated effort: 2-3 days; would unblock X use case"
+   - Each recommendation carries **acceptance criteria** (how a reviewer proves it landed) and one **measurable success metric**.
+   - Each high-priority recommendation gets an **ADR stub** in `docs/adr/NNNN-<slug>.md` (Title / Status / Context / Decision / Consequences / Alternatives considered), so the decision survives the report.
 8. Interactive report features (navigation, Mermaid rendering, follow-up request button, IMPLEMENT button)
 
 **After generating:**
@@ -504,7 +541,9 @@ When the user asks "Is this the best you can do?", "Can you do better?", or chal
 1. **Subagent Depth (Parallel Multi-Strategy Retrieval):**
    - Dispatch parallel subagents across adjacent search strategies (e.g., if initial run used `codebase-first`, branch into `targeted-docs`, `cve-driven`, and `pattern-driven`).
    - Query multiple source types concurrently rather than relying on a single retrieval vector.
+   - **Give every subagent the same output envelope** (`{finding, file_or_url, tier, evidence, confidence}` — the `externalResearch` shape in `templates/report.schema.json`) so results merge without re-reading prose.
    - Respect per-strategy search budgets while exhausting relevant tiers.
+   - End with a **revision log**: what the second pass changed, what it confirmed, and what it withdrew. A longer version of pass one is not escalation.
 
 2. **Multi-Format Output Expansion:**
    - Generate all 4 output formats (`.html`, `.json`, `.md`, `.sarif`) in `docs/` using templates from `templates/` rather than only HTML.
@@ -513,6 +552,7 @@ When the user asks "Is this the best you can do?", "Can you do better?", or chal
 3. **External Verification (Tier 1-2 Grounding):**
    - Cross-check internal deductions against Tier 1 sources (official documentation, vendor advisories, RFC specs) and Tier 2 sources (accepted issues, official repo discussions).
    - Ensure every claim, dependency flag, and optimality critique cites an authoritative source with tier weighting (e.g., `[Tier 1: Docs]`).
+   - **Name the version** from `references/modern-standards.md` — "WCAG 2.2 SC 2.5.8", "CVSS v4.0", "SARIF 2.1.0", "Mermaid 11.1". An unversioned standard claim is a guess with a citation glued on.
 
 4. **Actionable Recommendations with Concrete Endpoints & Controls:**
    - Reject vague advice ("improve performance", "refactor auth").
@@ -527,19 +567,24 @@ When the user asks "Is this the best you can do?", "Can you do better?", or chal
 surgical-investigation/
 ├── SKILL.md                              # Skill definition and procedure rules
 ├── templates/
-│   ├── report.html                       # HTML report template (interactive)
+│   ├── report.html                       # HTML report template (interactive, Mermaid 11)
 │   ├── report.json                       # JSON report template (machine-readable)
+│   ├── report.schema.json                # JSON Schema 2020-12 contract for report.json
 │   ├── report.md                         # Markdown report template (documentation/PRs)
 │   └── report.sarif                      # SARIF 2.1.0 report template (code scanning)
 ├── references/
 │   ├── search-strategy-system.md         # Strategy definitions, budgets, cache, credibility, composition, output schemas
+│   ├── modern-standards.md               # Current versions: CVSS v4/EPSS/KEV, SBOM, SARIF, Mermaid 11, WCAG 2.2, MCP, AGENTS.md
 │   ├── feature-recommendation-format.md  # Recommendation format with endpoints, controls, webhooks, widgets
 │   ├── external-service-auth.md          # External service authorization layers & debug rules
 │   ├── mermaid-best-practices.md         # Diagram size limits, naming, subgraphs, color coding
 │   ├── sarif-schema.md                   # SARIF 2.1.0 schema mapping and rules
 │   ├── skill-authoring-standards.md      # Hermes skill authoring guidelines and checklist
-│   └── comparative-analysis-pattern.md   # Comparative decision analysis (multi-option)
+│   ├── comparative-analysis-pattern.md   # Comparative decision analysis (multi-option)
+│   └── due-diligence-benchmarks.md       # OSINT/company due-diligence benchmarks
 └── tests/
+    ├── fixtures/
+    │   └── report.example.json           # Schema-valid example used by the contract tests
     └── skills/
         └── test_surgical_investigation_skill.py  # Unit and integration test suite
 ```
@@ -594,6 +639,7 @@ surgical-investigation/
 - `references/skill-authoring-standards.md` — Hermes skill file requirements, frontmatter rules, body structure, size limits, reference/template file rules, test requirements
 - `references/comparative-analysis-pattern.md` — Comparative decision analysis across two or more options (systems, countries, platforms, pathways): Step 1 scope additions, comparison-matrix format, and recommendation structure for comparative outputs
 - `references/due-diligence-benchmarks.md` — Regulatory-requirement and disclosure benchmarks for non-codebase (OSINT/company/person) investigations
+- `references/modern-standards.md` — Version-pinned baseline for every standard the procedure cites (CVSS v4.0 / EPSS / KEV, CycloneDX 1.6+ / SPDX 3.0.1, SARIF 2.1.0, Mermaid 11, WCAG 2.2, MCP 2025-11-25, AGENTS.md), with Tier 1–2 citations
 
 ---
 

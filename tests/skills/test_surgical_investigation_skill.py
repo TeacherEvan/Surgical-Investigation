@@ -569,6 +569,57 @@ class TestBestYouCanDoProtocol(unittest.TestCase):
         self.assertNotIn("`references/telegram-bot-auth.md`", self.body)
 
 
+class TestReportSchemaContract(unittest.TestCase):
+    """The JSON report is a machine contract: structure is validated, not assumed."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.schema_path = TEMPLATES_DIR / "report.schema.json"
+        cls.example_path = (
+            pathlib.Path(__file__).resolve().parent.parent / "fixtures" / "report.example.json"
+        )
+
+    def test_schema_file_exists(self):
+        self.assertTrue(self.schema_path.exists(), "templates/report.schema.json missing")
+
+    def test_schema_is_json_schema_2020_12(self):
+        import json
+
+        schema = json.loads(self.schema_path.read_text(encoding="utf-8"))
+        self.assertEqual(schema.get("$schema"), "https://json-schema.org/draft/2020-12/schema")
+        self.assertIn("required", schema)
+
+    def test_example_report_validates_against_schema(self):
+        import json
+
+        try:
+            import jsonschema
+        except ImportError:  # pragma: no cover - dependency-free fallback
+            raise unittest.SkipTest("jsonschema not installed")
+
+        schema = json.loads(self.schema_path.read_text(encoding="utf-8"))
+        doc = json.loads(self.example_path.read_text(encoding="utf-8"))
+        jsonschema.Draft202012Validator.check_schema(schema)
+        jsonschema.Draft202012Validator(schema).validate(doc)
+
+    def test_template_carries_every_required_top_level_key(self):
+        import json
+
+        schema = json.loads(self.schema_path.read_text(encoding="utf-8"))
+        template = json.loads(JSON_TEMPLATE_PATH.read_text(encoding="utf-8"))
+        for key in schema["required"]:
+            self.assertIn(key, template,
+                          f"templates/report.json is missing the schema-required key {key!r}")
+
+    def test_example_cites_a_tier_for_every_external_finding(self):
+        import json
+
+        doc = json.loads(self.example_path.read_text(encoding="utf-8"))
+        for item in doc["externalResearch"]:
+            self.assertIn("tier", item)
+            self.assertIn(item["tier"], (1, 2, 3, 4, 5))
+
+
 if __name__ == "__main__":
     # Allow running directly: python test_surgical_investigation_skill.py
     unittest.main(verbosity=2)
